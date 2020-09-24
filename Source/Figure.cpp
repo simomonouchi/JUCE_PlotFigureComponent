@@ -48,28 +48,12 @@ void PlotData::add(float x, float y)
 
 PlotData::~PlotData()
 {
-//    point_.deleteAll();
+    point_.deleteAll();
 }
 
 
 Figure::Figure()
 {
-    title_ = "";
-    xLabel_ = "";
-    yLabel_ = "";
-    figureColour_ = Colour(0, 0, 0x33);
-    backGroungColour_ = Colours::black;
-    xMin_ = 0.0;
-    xMax_ = 0.0;
-    yMin_ = 0.0;
-    yMax_ = 0.0;
-    
-    datasetMaxSize = 1024;
-    
-    paddingTop_    = 10;
-    paddingBottom_ = 10;
-    paddingLeft_   = 10;
-    paddingRight_  = 10;
 }
 
 Figure::Figure(Rectangle<int> graphAria):
@@ -81,21 +65,6 @@ Figure::Figure(Rectangle<int> graphAria):
             graphAria_.getWidth()*0.8,
             graphAria_.getHeight()*0.8
      );
-    
-    title_ = "";
-    xLabel_ = "";
-    yLabel_ = "";
-    figureColour_ = Colours::black;
-    backGroungColour_ = Colours::black;
-    xMin_ = 0.0;
-    xMax_ = 0.0;
-    yMin_ = 0.0;
-    yMax_ = 0.0;
-    
-    paddingTop_    = 10;
-    paddingBottom_ = 10;
-    paddingLeft_   = 10;
-    paddingRight_  = 10;
 }
 
 Figure::~Figure()
@@ -112,8 +81,6 @@ void Figure::setBounds(int x, int y, int width, int height)
             graphAria_.getWidth()-(50+paddingRight_),
             graphAria_.getHeight()-(50+paddingBottom_)
      );
-    
-
 }
 
 void Figure::addDataSet(float* y, int len)
@@ -138,12 +105,6 @@ void Figure::addPoint(float y, int idx)
     PlotData* dataset = ope.get();
     
     dataset->add(y);
-    if (dataset->point_.size() == datasetMaxSize){
-        dataset->point_.remove(dataset->point_.get());
-        printf("%d\n",dataset->point_.size());
-        xMin_ += 1;
-        xMax_ = xMin_ + datasetMaxSize;
-    }
     
 }
 
@@ -165,42 +126,46 @@ void Figure::paint(Graphics& g)
     g.setColour(backGroungColour_);
     g.fillRect(graphAria_);
     
-    g.setColour(figureColour_);
+    g.setColour(plotAriaColour_);
     g.fillRect(regionGraph_);
     
-    {
-        PlotData* dataset = plotData_.get();
-        while (dataset != NULL)
-        {
-        PlotPoint* point = dataset->point_.get();
-            while (dataset != NULL)
-            {
-                xMin_ = point->x;
-                xMax_ = point->x;
-                yMin_ = point->y;
-                yMax_ = point->y;
-                break;
-            }
-            break;
-        }
-    }
+//    {
+//        PlotData* dataset = plotData_.get();
+//        while (dataset != NULL)
+//        {
+//        PlotPoint* point = dataset->point_.get();
+//            while (dataset != NULL)
+//            {
+//                xMin_ = point->x;
+//                xMax_ = point->x;
+//                yMin_ = point->y;
+//                yMax_ = point->y;
+//                break;
+//            }
+//            break;
+//        }
+//    }
     PlotData* dataset = plotData_.get();
     while (dataset != NULL)
     {
         PlotPoint* point = dataset->point_.get();
         while (point != NULL)
         {
-            if (point->x > xMax_) xMax_ = point->x;
-            if (point->y > yMax_) yMax_ = point->y;
-            if (point->x < xMin_) xMin_ = point->x;
-            if (point->y < yMin_) yMin_ = point->y;
+            if(autoSettingXAxisRange_){
+                if (point->x > xMax_) xMax_ = point->x;
+                if (point->x < xMin_) xMin_ = point->x;
+            }
+            if(autoSettingYAxisRange_){
+                if (point->y > yMax_) yMax_ = point->y;
+                if (point->y < yMin_) yMin_ = point->y;
+            }
             point = point->nextListItem;
         }
         dataset = dataset->nextListItem;
     }
     
-    int dx = (xMax_ - xMin_) / 10;
-    int dy = (yMax_ - yMin_) / 10;
+    float dx = (xMax_ - xMin_) / 10;
+    float dy = (yMax_ - yMin_) / 10;
     float scaleX = regionGraph_.getWidth()
         / ((xMax_ == xMin_ ? 0.0001 : xMax_ - xMin_) * 1.10);
     float scaleY = regionGraph_.getHeight()
@@ -209,11 +174,10 @@ void Figure::paint(Graphics& g)
 
     // draw points
     {
-        g.setColour(Colours::yellow);
         PlotData* dataset = plotData_.get();
         while (dataset != NULL)
         {
-    //        g.setColour(dataset->colour);
+            g.setColour(dataset->getLineColour());
             PlotPoint* point = dataset->point_.get();
             bool notFirstFlag = false;
             int preX;
@@ -223,29 +187,36 @@ void Figure::paint(Graphics& g)
                 int x = (scaleX * (point->x - xMin_)) + regionGraph_.getX();
                 int y = regionGraph_.getHeight() - (scaleY * (point->y - yMin_)) + regionGraph_.getY();
                 if(notFirstFlag){
-                g.drawLine(preX, preY, x, y, 2);
-    //          g.fillRect(x - 2, y - 2, 5, 5);
+//                    if(regionGraph_.getRight()>x && regionGraph_.getY()>y){
+                        g.drawLine(preX, preY, x, y, 2);
+                    //          g.fillRect(x - 2, y - 2, 5, 5);
+//                    }
                 }
+                else{
+                    notFirstFlag = true;
+                }
+
+                
                 
                 preX = x;
                 preY = y;
                 
                 point = point->nextListItem;
-                notFirstFlag = true;
+                
             }
             dataset = dataset->nextListItem;
         }
     }
     
     // draw x-axis
-    g.setFont(Font(16.0f));
-    g.setColour(Colours::white);
+    g.setFont(Font(fontSize_));
+    g.setColour(fontColour_);
     for (int i = 0; i < 11; i++)
     {
         int x = (scaleX * i * dx) + regionGraph_.getBottomLeft().getX();
         int y = regionGraph_.getBottomLeft().getY();
         int y0 = regionGraph_.getTopLeft().getY();
-        int value = xMin_ + (dx * i);
+        float value = xMin_ + (dx * i);
         Line<float> line(x, y, x, y0);
         float len[] = { 4, 2 };
         g.drawDashedLine(line, len, 2);
@@ -259,7 +230,7 @@ void Figure::paint(Graphics& g)
         int x = regionGraph_.getTopLeft().getX();
         int y = regionGraph_.getHeight() - (scaleY * i * dy) + regionGraph_.getTopLeft().getY();
         int x0 = regionGraph_.getTopRight().getX();
-        int value = yMin_ + (dy * i);
+        float value = yMin_ + (dy * i);
         Line<float> line(x, y, x0, y);
         float len[] = { 4, 2 };
         g.drawDashedLine(line, len, 2);

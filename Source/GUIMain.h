@@ -36,6 +36,8 @@
 */
 class GUIMain  : public juce::Component,
                  private Timer,
+                 public juce::Slider::Listener,
+                 public juce::ComboBox::Listener,
                  public juce::Button::Listener
 {
 public:
@@ -52,6 +54,8 @@ public:
 
     void paint (juce::Graphics& g) override;
     void resized() override;
+    void sliderValueChanged (juce::Slider* sliderThatWasMoved) override;
+    void comboBoxChanged (juce::ComboBox* comboBoxThatHasChanged) override;
     void buttonClicked (juce::Button* buttonThatWasClicked) override;
 
 
@@ -62,18 +66,42 @@ private:
     //[/UserVariables]
 
     //==============================================================================
-    std::unique_ptr<juce::TextButton> juce__textButton;
     std::unique_ptr<juce::TextEditor> xMin_textEditor;
-    std::unique_ptr<juce::Label> xMin_label;
-    std::unique_ptr<juce::Label> xLength_label;
+    std::unique_ptr<juce::Label> xAxisRange_label;
     std::unique_ptr<juce::TextEditor> xLength_textEditor;
     std::unique_ptr<juce::TextEditor> yMin_textEditor;
-    std::unique_ptr<juce::Label> yMin_label;
+    std::unique_ptr<juce::Label> yAxisRange_label;
     std::unique_ptr<juce::TextEditor> yLength_textEditor;
-    std::unique_ptr<juce::Label> yLength_label;
     std::unique_ptr<Figure> graph;
     std::unique_ptr<Figure> graph2;
-    std::unique_ptr<Figure> graph3;
+    std::unique_ptr<juce::Slider> juce__slider;
+    std::unique_ptr<juce::Label> juce__label;
+    std::unique_ptr<juce::Slider> juce__slider2;
+    std::unique_ptr<juce::Label> juce__label2;
+    std::unique_ptr<juce::Label> deawWavelabel;
+    std::unique_ptr<juce::Label> deawWavelabel3;
+    std::unique_ptr<juce::ComboBox> WaveFormcomboBox;
+    std::unique_ptr<juce::Label> yAxisRange_label3;
+    std::unique_ptr<juce::Label> yAxisRange_label4;
+    std::unique_ptr<juce::TextEditor> yMin_textEditor3;
+    std::unique_ptr<juce::TextEditor> yMin_textEditor4;
+    std::unique_ptr<juce::Label> yAxisRange_label5;
+    std::unique_ptr<juce::TextEditor> yMin_textEditor5;
+    std::unique_ptr<juce::Label> yAxisRange_label6;
+    std::unique_ptr<juce::TextEditor> yMin_textEditor6;
+    std::unique_ptr<juce::Label> yAxisRange_label7;
+    std::unique_ptr<juce::TextEditor> yMin_textEditor7;
+    std::unique_ptr<juce::Label> yAxisRange_label8;
+    std::unique_ptr<juce::TextEditor> yMin_textEditor8;
+    std::unique_ptr<juce::Label> yAxisRange_label9;
+    std::unique_ptr<juce::TextButton> juce__textButton;
+    std::unique_ptr<juce::Label> juce__label3;
+    std::unique_ptr<juce::Label> juce__label4;
+    std::unique_ptr<juce::Label> yAxisRange_label10;
+    std::unique_ptr<juce::TextButton> juce__textButton2;
+    std::unique_ptr<juce::Label> yAxisRange_label11;
+    std::unique_ptr<juce::TextButton> juce__textButton3;
+    std::unique_ptr<juce::Label> juce__label5;
 
 
     //==============================================================================

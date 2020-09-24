@@ -16,7 +16,7 @@ class PlotPoint
 {
 public:
     PlotPoint(float x, float y);
-    ~PlotPoint();
+    ~PlotPoint(){};
     
 public:
      LinkedListPointer<PlotPoint> nextListItem;
@@ -36,9 +36,21 @@ public:
     void add(float x, float y);
     ~PlotData();
     
+    /* Setter */
+    inline void setLineColour(Colour lineColour) noexcept { lineColour_ = lineColour; };
+    inline void setMarkerColour(Colour markerColour) noexcept { markerColour_ = markerColour; };
+    
+    /* Getter */
+    inline Colour getLineColour() const noexcept { return lineColour_; };
+    inline Colour getMarkerColour() const noexcept { return markerColour_; };
+    
 public:
     LinkedListPointer<PlotData> nextListItem;
     LinkedListPointer<PlotPoint> point_;
+
+private:
+    Colour lineColour_ = Colours::orange;
+    Colour markerColour_ = Colours::orange;
 };
 
 //==============================================================================
@@ -68,7 +80,7 @@ public:
 //==============================================================================
     /* Setter */
     inline void setBackgroundColour(Colour backGroungColour) noexcept {backGroungColour_ = backGroungColour;}
-    inline void setFigureColour(Colour figureColour) noexcept { figureColour_ = figureColour; }
+    inline void setFigureColour(Colour figureColour) noexcept { plotAriaColour_ = figureColour; }
     inline void setTitle(String title) noexcept { title_ = title; }
     inline void setXLabel(String xLabel) noexcept { xLabel_ = xLabel; }
     inline void setYLabel(String yLabel) noexcept { yLabel_ = yLabel; }
@@ -76,12 +88,13 @@ public:
     {
         xMin_ = xMin;
         xMax_ = xMax;
+        autoSettingXAxisRange_ = false;
     }
     inline void setYLim(float yMin, float yMax) noexcept
     {
         yMin_ = yMin;
         yMax_ = yMax;
-        
+        autoSettingYAxisRange_ = false;
     }
     
     inline void setPadding(int top, int bottom, int left, int right) noexcept
@@ -101,34 +114,38 @@ public:
     inline int getPaddingBottom() const noexcept { return paddingBottom_; }
     inline int getPaddingLeft() const noexcept { return paddingLeft_; }
     inline int getPaddingRight() const noexcept { return paddingRight_; }
-    inline Range<int> getXLim() const noexcept { return XRange; }
-    inline Range<int> getYLim() const noexcept { return YRange; }
+    inline Range<float> getXLim() const noexcept { return XRange; }
+    inline Range<float> getYLim() const noexcept { return YRange; }
     
 /* Private Properties */
 private:
     Rectangle<int> graphAria_;
     Rectangle<int> regionGraph_;
     
-    String title_;
-    String xLabel_;
-    String yLabel_;
-    Colour figureColour_;
-    Colour backGroungColour_;
-    Range<int> XRange;
-    Range<int> YRange;
-    float xMin_;
-    float xMax_;
-    float yMin_;
-    float yMax_;
-    int datasetMaxSize;
+    String title_ = "";
+    String xLabel_ = "";
+    String yLabel_ = "";
+    Colour plotAriaColour_ = Colour(0, 0, 0x33);
+    Colour backGroungColour_ = Colours::black;
+    Colour fontColour_ = Colours::white;
+    float fontSize_ = 15.0f;
+    Range<float> XRange;
+    Range<float> YRange;
+    float xMin_ = 0.0f;
+    float xMax_ = 512.0f;
+    float yMin_ = -1.0f;
+    float yMax_ = 1.0f;
+    int datasetMaxSize_ = 32768;
+    bool autoSettingXAxisRange_ = true;
+    bool autoSettingYAxisRange_ = true;
     
     LinkedListPointer<PlotData> plotData_;
 
     GridItem::Margin Padding;
-    int paddingTop_;
-    int paddingBottom_;
-    int paddingLeft_;
-    int paddingRight_;
+    int paddingTop_     = 10;
+    int paddingBottom_  = 10;
+    int paddingLeft_    = 10;
+    int paddingRight_   = 10;
     
      //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Figure)

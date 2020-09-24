@@ -47,11 +47,18 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
     // Your audio-processing code goes here!
     if (bufferToFill.buffer->getNumChannels() > 0)
     {
-//        auto* channelData = bufferToFill.buffer->getReadPointer (0, bufferToFill.startSample);
+        auto* channelData = bufferToFill.buffer->getReadPointer (0, bufferToFill.startSample);
 
         for (auto i = 0; i < bufferToFill.numSamples; ++i){
-//            guimain.addGraphData(channelData[i]);
-            guimain.addGraph2Data(random()/powf(2, 32-1));
+            
+            auto data = channelData[i];
+            
+            if (data>1.0f) data = 1.0f;
+            else if (data<-1.0f) data = -1.0f;
+            
+            guimain.addGraph2Data(data);
+            std::cout << channelData[i] << std::endl;
+//            guimain.addGraph2Data(random()/powf(2, 32-1));
         }
     }
 
