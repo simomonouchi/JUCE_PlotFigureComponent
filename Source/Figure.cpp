@@ -60,6 +60,15 @@ PlotDataset::~PlotDataset()
     points.deleteAll();
 }
 
+void Figure::setPlotAriaBounds() noexcept
+{
+    plotAria_.setBounds(
+            graphAria_.getX() + paddingLeft_,
+            graphAria_.getY() + paddingTop_,
+            graphAria_.getWidth() - paddingRight_ - paddingLeft_,
+            graphAria_.getHeight() - paddingBottom_ +paddingTop_
+     );
+}
 
 Figure::Figure()
 {
@@ -68,12 +77,7 @@ Figure::Figure()
 Figure::Figure(Rectangle<int> graphAria):
     graphAria_(graphAria)
 {
-    regionGraph_.setBounds(
-            graphAria_.getX()+graphAria_.getWidth()*0.1,
-            graphAria_.getY()+graphAria_.getHeight()*0.1,
-            graphAria_.getWidth()*0.8,
-            graphAria_.getHeight()*0.8
-     );
+    setPlotAriaBounds();
 }
 
 Figure::~Figure()
@@ -84,12 +88,8 @@ Figure::~Figure()
 void Figure::setBounds(int x, int y, int width, int height)
 {
     graphAria_.setBounds(x, y, width, height);
-    regionGraph_.setBounds(
-            graphAria_.getX()+50+paddingLeft_,
-            graphAria_.getY()+paddingTop_,
-            graphAria_.getWidth()-(50+paddingRight_),
-            graphAria_.getHeight()-(50+paddingBottom_)
-     );
+    
+    setPlotAriaBounds();
 }
 
 void Figure::addDataSet(float* y, int len)
@@ -144,7 +144,7 @@ void Figure::paint(Graphics& g)
     g.fillRect(graphAria_);
     
     g.setColour(plotAriaColour_);
-    g.fillRect(regionGraph_);
+    g.fillRect(plotAria_);
     
 //    {
 //        PlotData* dataset = plotData_.get();
@@ -183,9 +183,9 @@ void Figure::paint(Graphics& g)
     
     float dx = (xMax_ - xMin_) / 5;
     float dy = (yMax_ - yMin_) / 5;
-    float scaleX = regionGraph_.getWidth()
+    float scaleX = plotAria_.getWidth()
         / ((xMax_ == xMin_ ? 0.0001 : xMax_ - xMin_) * 1.10);
-    float scaleY = regionGraph_.getHeight()
+    float scaleY = plotAria_.getHeight()
         / ((yMax_ == yMin_ ? 0.0001 : yMax_ - yMin_) * 1.10);
 
 
@@ -201,8 +201,8 @@ void Figure::paint(Graphics& g)
             int preY;
             while (point != NULL)
             {
-                int x = (scaleX * (point->x - xMin_)) + regionGraph_.getX();
-                int y = regionGraph_.getHeight() - (scaleY * (point->y - yMin_)) + regionGraph_.getY();
+                int x = (scaleX * (point->x - xMin_)) + plotAria_.getX();
+                int y = plotAria_.getHeight() - (scaleY * (point->y - yMin_)) + plotAria_.getY();
                 if(notFirstFlag){
 //                    if(regionGraph_.getRight()>x && regionGraph_.getY()>y){
                         g.drawLine(preX, preY, x, y, 2);
@@ -230,9 +230,9 @@ void Figure::paint(Graphics& g)
     g.setColour(fontColour_);
     for (int i = 0; i < 6; i++)
     {
-        int x = (scaleX * i * dx) + regionGraph_.getBottomLeft().getX();
-        int y = regionGraph_.getBottomLeft().getY();
-        int y0 = regionGraph_.getTopLeft().getY();
+        int x = (scaleX * i * dx) + plotAria_.getBottomLeft().getX();
+        int y = plotAria_.getBottomLeft().getY();
+        int y0 = plotAria_.getTopLeft().getY();
         float value = xMin_ + (dx * i);
         Line<float> line(x, y, x, y0);
         float len[] = { 4, 2 };
@@ -244,9 +244,9 @@ void Figure::paint(Graphics& g)
     // draw y-axis
     for (int i = 0; i < 6; i++)
     {
-        int x = regionGraph_.getTopLeft().getX();
-        int y = regionGraph_.getHeight() - (scaleY * i * dy) + regionGraph_.getTopLeft().getY();
-        int x0 = regionGraph_.getTopRight().getX();
+        int x = plotAria_.getTopLeft().getX();
+        int y = plotAria_.getHeight() - (scaleY * i * dy) + plotAria_.getTopLeft().getY();
+        int x0 = plotAria_.getTopRight().getX();
         float value = yMin_ + (dy * i);
         Line<float> line(x, y, x0, y);
         float len[] = { 4, 2 };
