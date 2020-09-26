@@ -50,15 +50,12 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
         auto* channelData = bufferToFill.buffer->getReadPointer (0, bufferToFill.startSample);
 
         for (auto i = 0; i < bufferToFill.numSamples; ++i){
-            
             auto data = channelData[i];
             
             if (data>1.0f) data = 1.0f;
             else if (data<-1.0f) data = -1.0f;
             
             guimain.addGraph2Data(data);
-            std::cout << channelData[i] << std::endl;
-//            guimain.addGraph2Data(random()/powf(2, 32-1));
         }
     }
 

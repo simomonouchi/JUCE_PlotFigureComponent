@@ -10,45 +10,54 @@
 
 #include "Figure.h"
 
-PlotPoint::PlotPoint(float x, float y)
- :  x(x), y(y)
-{
-}
+//PlotPoint::PlotPoint(float x, float y)
+// :  x(x), y(y)
+//{
+//}
 
-PlotData::PlotData(float* x, float* y, int len)
+PlotDataset::PlotDataset(float* x, float* y, int len)
 {
     for(int sample = 0; sample<len;sample++){
-        point_.append(new PlotPoint(x[sample],y[sample]));
+        points.append( new PlotPoints{x[sample], y[sample]});
     }
 }
 
 
-PlotData::PlotData(float* y, int len)
+PlotDataset::PlotDataset(float* y, int len)
 {
     for(int sample = 0; sample<len;sample++){
-        point_.append(new PlotPoint(sample,y[sample]));
+        points.append( new PlotPoints{static_cast<float>(sample), y[sample]});
     }
 }
 
-PlotData::PlotData()
+PlotDataset::PlotDataset()
 {
     
 }
 
-void PlotData::add(float y)
+void PlotDataset::add(float y)
 {
-    point_.append(new PlotPoint(point_.size(),y));
+    float x = 0;
+    if (points.size()){
+        int index = points.size()-1;
+        const LinkedListPointer<PlotPoints>& ope = points.operator[](index);
+        
+        PlotPoints* lastPoint = ope.get();
+        x = lastPoint->x + 1;
+    }
+    
+    points.append( new PlotPoints{x, y});
 }
 
-void PlotData::add(float x, float y)
+void PlotDataset::add(float x, float y)
 {
-    point_.append(new PlotPoint(x,y));
+    points.append( new PlotPoints{x, y});
 }
 
 
-PlotData::~PlotData()
+PlotDataset::~PlotDataset()
 {
-    point_.deleteAll();
+    points.deleteAll();
 }
 
 
@@ -85,33 +94,41 @@ void Figure::setBounds(int x, int y, int width, int height)
 
 void Figure::addDataSet(float* y, int len)
 {
-    plotData_.append(new PlotData(y, len));
-
+    plotData_.append(new PlotDataset(y, len));
 }
 
 void Figure::addDateSet(float* x, float* y, int len)
 {
-     plotData_.append(new PlotData(x, y, len));
+     plotData_.append(new PlotDataset(x, y, len));
 }
 
 int Figure::creatreDataSet(){
-    plotData_.append(new PlotData());
+    plotData_.append(new PlotDataset());
     return plotData_.size();
 }
 
 void Figure::addPoint(float y, int idx)
 {
-    LinkedListPointer<PlotData>& ope = plotData_.operator[](idx-1);
-    PlotData* dataset = ope.get();
+    LinkedListPointer<PlotDataset>& ope = plotData_.operator[](idx-1);
+    PlotDataset* dataset = ope.get();
     
+    if(dataset->points.size() > datasetMaxSize_)
+    {
+        PlotDataset::PlotPoints* point = dataset->points.get();
+        dataset->points.remove(point);
+        delete point;
+        
+        xMin_++;
+        xMax_++;
+    }
     dataset->add(y);
     
 }
 
 void Figure::addPoint(float x, float y, int idx)
 {
-    LinkedListPointer<PlotData>& ope = plotData_.operator[](idx-1);
-    PlotData* dataset = ope.get();
+    LinkedListPointer<PlotDataset>& ope = plotData_.operator[](idx-1);
+    PlotDataset* dataset = ope.get();
     dataset->add(x, y);
 }
 
@@ -145,10 +162,10 @@ void Figure::paint(Graphics& g)
 //            break;
 //        }
 //    }
-    PlotData* dataset = plotData_.get();
+    PlotDataset* dataset = plotData_.get();
     while (dataset != NULL)
     {
-        PlotPoint* point = dataset->point_.get();
+        PlotDataset::PlotPoints* point = dataset->points.get();
         while (point != NULL)
         {
             if(autoSettingXAxisRange_){
@@ -164,8 +181,8 @@ void Figure::paint(Graphics& g)
         dataset = dataset->nextListItem;
     }
     
-    float dx = (xMax_ - xMin_) / 10;
-    float dy = (yMax_ - yMin_) / 10;
+    float dx = (xMax_ - xMin_) / 5;
+    float dy = (yMax_ - yMin_) / 5;
     float scaleX = regionGraph_.getWidth()
         / ((xMax_ == xMin_ ? 0.0001 : xMax_ - xMin_) * 1.10);
     float scaleY = regionGraph_.getHeight()
@@ -174,11 +191,11 @@ void Figure::paint(Graphics& g)
 
     // draw points
     {
-        PlotData* dataset = plotData_.get();
+        PlotDataset* dataset = plotData_.get();
         while (dataset != NULL)
         {
             g.setColour(dataset->getLineColour());
-            PlotPoint* point = dataset->point_.get();
+            PlotDataset::PlotPoints* point = dataset->points.get();
             bool notFirstFlag = false;
             int preX;
             int preY;
@@ -211,7 +228,7 @@ void Figure::paint(Graphics& g)
     // draw x-axis
     g.setFont(Font(fontSize_));
     g.setColour(fontColour_);
-    for (int i = 0; i < 11; i++)
+    for (int i = 0; i < 6; i++)
     {
         int x = (scaleX * i * dx) + regionGraph_.getBottomLeft().getX();
         int y = regionGraph_.getBottomLeft().getY();
@@ -225,7 +242,7 @@ void Figure::paint(Graphics& g)
     }
 
     // draw y-axis
-    for (int i = 0; i < 11; i++)
+    for (int i = 0; i < 6; i++)
     {
         int x = regionGraph_.getTopLeft().getX();
         int y = regionGraph_.getHeight() - (scaleY * i * dy) + regionGraph_.getTopLeft().getY();

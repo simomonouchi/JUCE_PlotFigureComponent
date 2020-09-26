@@ -165,7 +165,7 @@ GUIMain::GUIMain ()
     deawWavelabel->setBounds (40, 40, 240, 24);
 
     deawWavelabel3.reset (new juce::Label ("deawWavelabel",
-                                           TRANS("Set Graph Property Demo")));
+                                           TRANS("Graph Property Setting Demo")));
     addAndMakeVisible (deawWavelabel3.get());
     deawWavelabel3->setFont (juce::Font (juce::Font::getDefaultSansSerifFontName(), 24.00f, juce::Font::plain).withTypefaceStyle ("Bold"));
     deawWavelabel3->setJustificationType (juce::Justification::centredLeft);
@@ -384,9 +384,9 @@ GUIMain::GUIMain ()
 
     juce__textButton2.reset (new juce::TextButton ("new button"));
     addAndMakeVisible (juce__textButton2.get());
-    juce__textButton2->setButtonText (TRANS("FF000000"));
+    juce__textButton2->setButtonText (TRANS("FF393643"));
     juce__textButton2->addListener (this);
-    juce__textButton2->setColour (juce::TextButton::buttonColourId, juce::Colours::black);
+    juce__textButton2->setColour (juce::TextButton::buttonColourId, juce::Colour (0xff393643));
 
     juce__textButton2->setBounds (732, 617, 80, 23);
 
@@ -403,9 +403,12 @@ GUIMain::GUIMain ()
 
     juce__textButton3.reset (new juce::TextButton ("new button"));
     addAndMakeVisible (juce__textButton3.get());
-    juce__textButton3->setButtonText (TRANS("FF000000"));
+    juce__textButton3->setButtonText (TRANS("FFFFFFFF"));
+    juce__textButton3->setConnectedEdges (juce::Button::ConnectedOnBottom);
     juce__textButton3->addListener (this);
-    juce__textButton3->setColour (juce::TextButton::buttonColourId, juce::Colours::black);
+    juce__textButton3->setColour (juce::TextButton::buttonColourId, juce::Colours::white);
+    juce__textButton3->setColour (juce::TextButton::buttonOnColourId, juce::Colours::white);
+    juce__textButton3->setColour (juce::TextButton::textColourOffId, juce::Colours::black);
 
     juce__textButton3->setBounds (732, 641, 80, 23);
 
@@ -426,7 +429,7 @@ GUIMain::GUIMain ()
     int bufferSize = 1024;
     auto sin_wave = new float[bufferSize];
     for (int i_sample = 0; i_sample<bufferSize; i_sample++){
-        sin_wave[i_sample] = 10*sinf(2*float_Pi*440/48000*i_sample);
+        sin_wave[i_sample] = 0.8*sinf(2*float_Pi*440/48000*i_sample);
     }
 
     graph->setBackgroundColour(Colours::black);
@@ -437,9 +440,13 @@ GUIMain::GUIMain ()
     graph->setBackgroundColour(Colours::black);
 
     delete[] sin_wave;
+
+    graph2->setXLabel(yMin_textEditor3->getText());
+    graph2->setYLabel(yMin_textEditor4->getText());
+    graph2->setXLim(0, 32768);
     //[/UserPreSize]
 
-    setSize (1200, 800);
+    setSize (1000, 800);
 
 
     //[Constructor] You can add your own custom stuff here..
@@ -653,7 +660,7 @@ BEGIN_JUCER_METADATA
 <JUCER_COMPONENT documentType="Component" className="GUIMain" componentName=""
                  parentClasses="public juce::Component, private Timer" constructorParams=""
                  variableInitialisers="" snapPixels="8" snapActive="1" snapShown="1"
-                 overlayOpacity="0.330" fixedSize="0" initialWidth="1200" initialHeight="800">
+                 overlayOpacity="0.330" fixedSize="0" initialWidth="1000" initialHeight="800">
   <BACKGROUND backgroundColour="ff323e44">
     <RECT pos="20 28 948 260" fill="solid: ff705555" hasStroke="0"/>
     <RECT pos="20 308 948 396" fill="solid: ff293125" hasStroke="0"/>
@@ -722,7 +729,7 @@ BEGIN_JUCER_METADATA
          typefaceStyle="Bold"/>
   <LABEL name="deawWavelabel" id="d07c3f5e300663ee" memberName="deawWavelabel3"
          virtualName="" explicitFocusOrder="0" pos="48 320 304 24" edTextCol="ff000000"
-         edBkgCol="0" labelText="Set Graph Property Demo" editableSingleClick="0"
+         edBkgCol="0" labelText="Graph Property Setting Demo" editableSingleClick="0"
          editableDoubleClick="0" focusDiscardsChanges="0" fontname="Default sans-serif font"
          fontsize="24.0" kerning="0.0" bold="1" italic="0" justification="33"
          typefaceStyle="Bold"/>
@@ -809,16 +816,17 @@ BEGIN_JUCER_METADATA
          editableDoubleClick="0" focusDiscardsChanges="0" fontname="Default monospaced font"
          fontsize="15.0" kerning="0.0" bold="0" italic="0" justification="34"/>
   <TEXTBUTTON name="new button" id="1697de2136a98347" memberName="juce__textButton2"
-              virtualName="" explicitFocusOrder="0" pos="732 617 80 23" bgColOff="ff000000"
-              buttonText="FF000000" connectedEdges="0" needsCallback="1" radioGroupId="0"/>
+              virtualName="" explicitFocusOrder="0" pos="732 617 80 23" bgColOff="ff393643"
+              buttonText="FF393643" connectedEdges="0" needsCallback="1" radioGroupId="0"/>
   <LABEL name="yAxisRange_label" id="e7d706a325205f63" memberName="yAxisRange_label11"
          virtualName="" explicitFocusOrder="0" pos="644 640 83 23" edTextCol="ff000000"
          edBkgCol="0" labelText="Font" editableSingleClick="0" editableDoubleClick="0"
          focusDiscardsChanges="0" fontname="Default monospaced font" fontsize="15.0"
          kerning="0.0" bold="0" italic="0" justification="34"/>
   <TEXTBUTTON name="new button" id="50f55b948ce42b7c" memberName="juce__textButton3"
-              virtualName="" explicitFocusOrder="0" pos="732 641 80 23" bgColOff="ff000000"
-              buttonText="FF000000" connectedEdges="0" needsCallback="1" radioGroupId="0"/>
+              virtualName="" explicitFocusOrder="0" pos="732 641 80 23" bgColOff="ffffffff"
+              bgColOn="ffffffff" textCol="ff000000" buttonText="FFFFFFFF" connectedEdges="8"
+              needsCallback="1" radioGroupId="0"/>
   <LABEL name="new label" id="7f1ba1f8a1e395c7" memberName="juce__label5"
          virtualName="" explicitFocusOrder="0" pos="408 567 192 16" bkgCol="0"
          edTextCol="ff000000" edBkgCol="0" labelText="Axes Settings&#10;"

@@ -12,30 +12,24 @@
 
 #include <JuceHeader.h>
 
-class PlotPoint
+class PlotDataset
 {
 public:
-    PlotPoint(float x, float y);
-    ~PlotPoint(){};
-    
-public:
-     LinkedListPointer<PlotPoint> nextListItem;
-     float x;
-     float y;
-};
-
-//==============================================================================
-
-class PlotData
-{
-public:
-    PlotData(float* x, float* y, int len);
-    PlotData(float* y, int len);
-    PlotData();
+    PlotDataset(float* x, float* y, int len);
+    PlotDataset(float* y, int len);
+    PlotDataset();
     void add(float y);
     void add(float x, float y);
-    ~PlotData();
+    void clear();
+    ~PlotDataset();
     
+    struct PlotPoints
+    {
+        float x;
+        float y;
+        LinkedListPointer<PlotPoints> nextListItem;
+    };
+
     /* Setter */
     inline void setLineColour(Colour lineColour) noexcept { lineColour_ = lineColour; };
     inline void setMarkerColour(Colour markerColour) noexcept { markerColour_ = markerColour; };
@@ -45,9 +39,9 @@ public:
     inline Colour getMarkerColour() const noexcept { return markerColour_; };
     
 public:
-    LinkedListPointer<PlotData> nextListItem;
-    LinkedListPointer<PlotPoint> point_;
-
+    LinkedListPointer<PlotDataset> nextListItem;
+    LinkedListPointer<PlotPoints> poinpts;
+    
 private:
     Colour lineColour_ = Colours::orange;
     Colour markerColour_ = Colours::orange;
@@ -125,7 +119,7 @@ private:
     String title_ = "";
     String xLabel_ = "";
     String yLabel_ = "";
-    Colour plotAriaColour_ = Colour(0, 0, 0x33);
+    Colour plotAriaColour_ = Colour(0xFF393643);
     Colour backGroungColour_ = Colours::black;
     Colour fontColour_ = Colours::white;
     float fontSize_ = 15.0f;
@@ -139,7 +133,7 @@ private:
     bool autoSettingXAxisRange_ = true;
     bool autoSettingYAxisRange_ = true;
     
-    LinkedListPointer<PlotData> plotData_;
+    LinkedListPointer<PlotDataset> plotData_;
 
     GridItem::Margin Padding;
     int paddingTop_     = 10;
