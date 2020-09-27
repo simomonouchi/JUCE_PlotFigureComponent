@@ -65,7 +65,7 @@ void Figure::setPlotAriaBounds() noexcept
             graphAria_.getX() + paddingLeft_,
             graphAria_.getY() + paddingTop_,
             graphAria_.getWidth() - paddingRight_ - paddingLeft_,
-            graphAria_.getHeight() - paddingBottom_ +paddingTop_
+            graphAria_.getHeight() - paddingBottom_ - paddingTop_
      );
 }
 
@@ -96,7 +96,7 @@ void Figure::addDataSet(float* y, int len)
     plotData_.append(new PlotDataset(y, len));
 }
 
-void Figure::addDateSet(float* x, float* y, int len)
+void Figure::addDataSet(float* x, float* y, int len)
 {
      plotData_.append(new PlotDataset(x, y, len));
 }
@@ -145,48 +145,10 @@ void Figure::paint(Graphics& g)
     g.setColour(plotAriaColour_);
     g.fillRect(plotAria_);
     
-//    {
-//        PlotData* dataset = plotData_.get();
-//        while (dataset != NULL)
-//        {
-//        PlotPoint* point = dataset->point_.get();
-//            while (dataset != NULL)
-//            {
-//                xMin_ = point->x;
-//                xMax_ = point->x;
-//                yMin_ = point->y;
-//                yMax_ = point->y;
-//                break;
-//            }
-//            break;
-//        }
-//    }
-    PlotDataset* dataset = plotData_.get();
-    while (dataset != NULL)
-    {
-        PlotDataset::PlotPoints* point = dataset->points.get();
-        while (point != NULL)
-        {
-            if(autoSettingXAxisRange_){
-                if (point->x > xMax_) xMax_ = point->x;
-                if (point->x < xMin_) xMin_ = point->x;
-            }
-            if(autoSettingYAxisRange_){
-                if (point->y > yMax_) yMax_ = point->y;
-                if (point->y < yMin_) yMin_ = point->y;
-            }
-            point = point->nextListItem;
-        }
-        dataset = dataset->nextListItem;
-    }
-    
-    float dx = (xMax_ - xMin_) / 5;
-    float dy = (yMax_ - yMin_) / 5;
-    float scaleX = plotAria_.getWidth()
-        / ((xMax_ == xMin_ ? 0.0001 : xMax_ - xMin_) * 1.10);
-    float scaleY = plotAria_.getHeight()
-        / ((yMax_ == yMin_ ? 0.0001 : yMax_ - yMin_) * 1.10);
-
+    float dx = (xMax_ - xMin_) / (xScaleRes_-1);
+    float dy = (yMax_ - yMin_) / (yScaleRes_-1);
+    float scaleX = plotAria_.getWidth() / (xMax_ - xMin_);
+    float scaleY = plotAria_.getHeight() / (yMax_ - yMin_);
 
     // draw points
     {
@@ -203,10 +165,18 @@ void Figure::paint(Graphics& g)
                 int x = (scaleX * (point->x - xMin_)) + plotAria_.getX();
                 int y = plotAria_.getHeight() - (scaleY * (point->y - yMin_)) + plotAria_.getY();
                 if(notFirstFlag){
-//                    if(regionGraph_.getRight()>x && regionGraph_.getY()>y){
-                        g.drawLine(preX, preY, x, y, 2);
-                    //          g.fillRect(x - 2, y - 2, 5, 5);
-//                    }
+                    g.drawLine(preX, preY, x, y, 2);
+                    if(marker_ == Markers::none)
+                    {
+                    }
+                    else if(marker_ == Markers::square)
+                    {
+                        g.fillRect(x - 2, y - 2, 5, 5);
+                    }
+                    else if (marker_ == Markers::circle)
+                    {
+                        g.fillEllipse(x - 2, y - 2, 5, 5);
+                    }
                 }
                 else{
                     notFirstFlag = true;
@@ -227,7 +197,7 @@ void Figure::paint(Graphics& g)
     // draw x-axis
     g.setFont(Font(fontSize_));
     g.setColour(fontColour_);
-    for (int i = 0; i < 6; i++)
+    for (int i = 0; i < 5; i++)
     {
         int x = (scaleX * i * dx) + plotAria_.getBottomLeft().getX();
         int y = plotAria_.getBottomLeft().getY();
@@ -237,11 +207,11 @@ void Figure::paint(Graphics& g)
         float len[] = { 4, 2 };
         g.drawDashedLine(line, len, 2);
         g.drawLine(x, y - 5, x, y + 5, 2);
-        g.drawSingleLineText(String(value), x, y + 20, Justification::left);
+        g.drawSingleLineText(String(value), x, y + 20, Justification::horizontallyCentred);
     }
 
     // draw y-axis
-    for (int i = 0; i < 6; i++)
+    for (int i = 0; i < 5; i++)
     {
         int x = plotAria_.getTopLeft().getX();
         int y = plotAria_.getHeight() - (scaleY * i * dy) + plotAria_.getTopLeft().getY();

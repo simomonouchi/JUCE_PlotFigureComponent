@@ -108,12 +108,12 @@ GUIMain::GUIMain ()
     addAndMakeVisible (WaveForm_comboBox.get());
     WaveForm_comboBox->setEditableText (false);
     WaveForm_comboBox->setJustificationType (juce::Justification::centredLeft);
-    WaveForm_comboBox->setTextWhenNothingSelected (TRANS("Sin"));
-    WaveForm_comboBox->setTextWhenNoChoicesAvailable (TRANS("(no choices)"));
-    WaveForm_comboBox->addItem (TRANS("Sin"), 1);
-    WaveForm_comboBox->addItem (TRANS("Cos"), 2);
-    WaveForm_comboBox->addItem (TRANS("Triangle"), 3);
-    WaveForm_comboBox->addItem (TRANS("Rectangle"), 4);
+    WaveForm_comboBox->setTextWhenNothingSelected (TRANS("Select wave form"));
+    WaveForm_comboBox->setTextWhenNoChoicesAvailable (juce::String());
+    WaveForm_comboBox->addItem (TRANS("sine"), 1);
+    WaveForm_comboBox->addItem (TRANS("cosine"), 2);
+    WaveForm_comboBox->addItem (TRANS("triangle"), 3);
+    WaveForm_comboBox->addItem (TRANS("square"), 4);
     WaveForm_comboBox->addListener (this);
 
     WaveForm_comboBox->setBounds (40, 64, 150, 24);
@@ -126,7 +126,7 @@ GUIMain::GUIMain ()
     XLabel_textEditor->setScrollbarsShown (true);
     XLabel_textEditor->setCaretVisible (true);
     XLabel_textEditor->setPopupMenuEnabled (true);
-    XLabel_textEditor->setText (TRANS("Amplitude"));
+    XLabel_textEditor->setText (TRANS("Sample"));
 
     XLabel_textEditor->setBounds (96, 310, 112, 24);
 
@@ -138,7 +138,7 @@ GUIMain::GUIMain ()
     YLabel_textEditor->setScrollbarsShown (true);
     YLabel_textEditor->setCaretVisible (true);
     YLabel_textEditor->setPopupMenuEnabled (true);
-    YLabel_textEditor->setText (TRANS("Sample"));
+    YLabel_textEditor->setText (TRANS("Amplitude"));
 
     YLabel_textEditor->setBounds (96, 344, 112, 22);
 
@@ -196,7 +196,7 @@ GUIMain::GUIMain ()
     buckgroundColour_button->addListener (this);
     buckgroundColour_button->setColour (juce::TextButton::buttonColourId, juce::Colours::black);
 
-    buckgroundColour_button->setBounds (328, 86, 80, 24);
+    buckgroundColour_button->setBounds (328, 88, 88, 24);
 
     plotAriaColour_button.reset (new juce::TextButton ("plotAriaColour_button"));
     addAndMakeVisible (plotAriaColour_button.get());
@@ -204,7 +204,7 @@ GUIMain::GUIMain ()
     plotAriaColour_button->addListener (this);
     plotAriaColour_button->setColour (juce::TextButton::buttonColourId, juce::Colour (0xff393643));
 
-    plotAriaColour_button->setBounds (328, 118, 80, 24);
+    plotAriaColour_button->setBounds (328, 120, 88, 24);
 
     GridColour_button.reset (new juce::TextButton ("GridColour_button"));
     addAndMakeVisible (GridColour_button.get());
@@ -215,7 +215,7 @@ GUIMain::GUIMain ()
     GridColour_button->setColour (juce::TextButton::buttonOnColourId, juce::Colours::white);
     GridColour_button->setColour (juce::TextButton::textColourOffId, juce::Colours::black);
 
-    GridColour_button->setBounds (328, 150, 80, 24);
+    GridColour_button->setBounds (328, 152, 88, 24);
 
     fontColour_button.reset (new juce::TextButton ("fontColour_button"));
     addAndMakeVisible (fontColour_button.get());
@@ -226,7 +226,7 @@ GUIMain::GUIMain ()
     fontColour_button->setColour (juce::TextButton::buttonOnColourId, juce::Colours::white);
     fontColour_button->setColour (juce::TextButton::textColourOffId, juce::Colours::black);
 
-    fontColour_button->setBounds (328, 182, 80, 24);
+    fontColour_button->setBounds (328, 184, 88, 24);
 
     timeAxis_figure.reset (new Figure());
     addAndMakeVisible (timeAxis_figure.get());
@@ -250,7 +250,7 @@ GUIMain::GUIMain ()
     bottom_textEditor->addListener(this);
     Left_textEditor->addListener(this);
     Right_textEditor->addListener(this);
-    
+
     forwardFFT.reset (new dsp::FFT(fftOrder));
 
     PropertySetting_figure->setXLabel("X axis");
@@ -258,28 +258,20 @@ GUIMain::GUIMain ()
     PropertySetting_figure->setXLabel(XLabel_textEditor->getText());
     PropertySetting_figure->setYLabel(YLabel_textEditor->getText());
     PropertySetting_figure->setXLim(0, 1024);
+    WaveForm_comboBox->setText("sine");
+    amplitude_slider->setValue(0.8);
+    freq_slider->setValue(440);
+    drawWave();
 
-    Font a = bottom_textEditor->getFont();
+    timeAxis_figure->setPadding(30, 20, 20, 30);
+    timeAxis_figure->setYLim(-0.5, 0.5);
 
-    int bufferSize = 1024;
-    auto sin_wave = new float[bufferSize];
-    for (int i_sample = 0; i_sample<bufferSize; i_sample++){
-        sin_wave[i_sample] = 0.8*sinf(2*float_Pi*440/48000*i_sample);
-    }
-
-    PropertySetting_figure->addDataSet(sin_wave, bufferSize);
-    delete[] sin_wave;
-
-    timeAxis_figure->setFontSize(10.0f);
-    timeAxis_figure->setPadding(25, 0, 0, 12);
-
-    freqAxis_figure->setFontSize(10.0f);
-    freqAxis_figure->setPadding(25, 0, 0, 12);
-    freqAxis_figure->setXLim(0, fftSize/2);
-    freqAxis_figure->setYLim(-80, 10);
+    freqAxis_figure->setPadding(30, 20, 20, 30);
+    freqAxis_figure->setXLim(0, 24000);
+    freqAxis_figure->setYLim(-60, 20);
     //[/UserPreSize]
 
-    setSize (1000, 800);
+    setSize (1000, 750);
 
 
     //[Constructor] You can add your own custom stuff here..
@@ -630,11 +622,13 @@ void GUIMain::resized()
 void GUIMain::sliderValueChanged (juce::Slider* sliderThatWasMoved)
 {
     //[UsersliderValueChanged_Pre]
+    drawWave();
     //[/UsersliderValueChanged_Pre]
 
     if (sliderThatWasMoved == amplitude_slider.get())
     {
         //[UserSliderCode_amplitude_slider] -- add your slider handling code here..
+
         //[/UserSliderCode_amplitude_slider]
     }
     else if (sliderThatWasMoved == freq_slider.get())
@@ -655,6 +649,7 @@ void GUIMain::comboBoxChanged (juce::ComboBox* comboBoxThatHasChanged)
     if (comboBoxThatHasChanged == WaveForm_comboBox.get())
     {
         //[UserComboBoxCode_WaveForm_comboBox] -- add your combo box handling code here..
+        drawWave();
         //[/UserComboBoxCode_WaveForm_comboBox]
     }
 
@@ -695,56 +690,61 @@ void GUIMain::buttonClicked (juce::Button* buttonThatWasClicked)
 
 
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
-void GUIMain::textEditorReturnKeyPressed (juce::TextEditor& textEditorThatWasReturnKeyPressed)
+void GUIMain::textEditorTextChanged (juce::TextEditor& textEditorThatWasTextChanged)
 {
-    String Value = textEditorThatWasReturnKeyPressed.getText();
+    String Value = textEditorThatWasTextChanged.getText();
 
-    if (&textEditorThatWasReturnKeyPressed == xMin_textEditor.get())
+    if (&textEditorThatWasTextChanged == xMin_textEditor.get()
+        || &textEditorThatWasTextChanged == xMax_textEditor.get())
     {
-
+        float min = xMin_textEditor.get()->getText().getFloatValue();
+        float max = xMax_textEditor.get()->getText().getFloatValue();
+        PropertySetting_figure->setXLim(min, max);
     }
-    else if (&textEditorThatWasReturnKeyPressed == xMax_textEditor.get())
+    else if (&textEditorThatWasTextChanged == yMin_textEditor.get()
+        || &textEditorThatWasTextChanged == yMax_textEditor.get())
     {
-
+        float min = yMin_textEditor.get()->getText().getFloatValue();
+        float max = yMax_textEditor.get()->getText().getFloatValue();
+        PropertySetting_figure->setYLim(min, max);
     }
-    else if (&textEditorThatWasReturnKeyPressed == yMin_textEditor.get())
-    {
 
+    else if (&textEditorThatWasTextChanged == XLabel_textEditor.get())
+    {
+        String text = textEditorThatWasTextChanged.getText();
+        PropertySetting_figure->setXLabel(text);
     }
-    else if (&textEditorThatWasReturnKeyPressed == yMax_textEditor.get())
+    else if (&textEditorThatWasTextChanged == YLabel_textEditor.get())
     {
-
+        String text = textEditorThatWasTextChanged.getText();
+        PropertySetting_figure->setYLabel(text);
     }
-    else if (&textEditorThatWasReturnKeyPressed == XLabel_textEditor.get())
+    else if (&textEditorThatWasTextChanged == Left_textEditor.get())
     {
-
+        int value = textEditorThatWasTextChanged.getText().getIntValue();
+        PropertySetting_figure->setPaddingLeft(value);
     }
-    else if (&textEditorThatWasReturnKeyPressed == YLabel_textEditor.get())
+    else if (&textEditorThatWasTextChanged == top_textEditor.get())
     {
-
+        int value = textEditorThatWasTextChanged.getText().getIntValue();
+        PropertySetting_figure->setPaddingTop(value);
     }
-    else if (&textEditorThatWasReturnKeyPressed == top_textEditor.get())
+    else if (&textEditorThatWasTextChanged == Right_textEditor.get())
     {
-
+        int value = textEditorThatWasTextChanged.getText().getIntValue();
+        PropertySetting_figure->setPaddingRight(value);
     }
-    else if (&textEditorThatWasReturnKeyPressed == bottom_textEditor.get())
+    else if (&textEditorThatWasTextChanged == bottom_textEditor.get())
     {
-
-    }
-    else if (&textEditorThatWasReturnKeyPressed == Left_textEditor.get())
-    {
-
-    }
-    else if (&textEditorThatWasReturnKeyPressed == Right_textEditor.get())
-    {
-
+        int value = textEditorThatWasTextChanged.getText().getIntValue();
+        PropertySetting_figure->setPaddingBottom(value);
     }
 }
 
 void GUIMain::addGraph2Data(float sample)
 {
     timeAxis_figure->addPoint(sample, plotIdx_);
-    
+
     fifo[fifoIndex] = sample;
     fifoIndex = (fifoIndex+1)%fftSize;
 }
@@ -756,17 +756,67 @@ void GUIMain::update()
 
 void GUIMain::timerCallback()
 {
+    /* fft */
     memcpy (fftData, fifo, sizeof (fifo));
     forwardFFT->performFrequencyOnlyForwardTransform (fftData);
+    float* x = new float[fftSize/2];
+
     for(int i=0;i<fftSize/2;i++)
     {
         fftData[i] = 20*log10(fftData[i]);
+        x[i] = 24000/512*i;
     }
-    
+
     freqAxis_figure->clear();
-    freqAxis_figure->addDataSet(fftData, fftSize/2);
-    
+    freqAxis_figure->addDataSet(x, fftData, fftSize/2);
+
     repaint();
+
+    delete[] x;
+}
+
+void GUIMain::drawWave()
+{
+    int bufferSize = 1024;
+    auto waveBuffer = new float[bufferSize];
+
+    float amp = amplitude_slider.get()->getValue();
+    float freq = freq_slider.get()->getValue();
+
+    String currentItem = WaveForm_comboBox->getText();
+
+    if (currentItem == String("sine"))
+    {
+        for (int i_sample = 0; i_sample<bufferSize; i_sample++){
+            waveBuffer[i_sample] = amp*sinf(2*float_Pi*freq/48000*i_sample);
+        }
+    }
+    else if(currentItem == String("cosine"))
+    {
+        for (int i_sample = 0; i_sample<bufferSize; i_sample++){
+            waveBuffer[i_sample] = amp*cosf(2*float_Pi*freq/48000*i_sample);
+        }
+    }
+    else if(currentItem == String("triangle"))
+    {
+
+        for (int i_sample = 0; i_sample<bufferSize; i_sample++){
+            waveBuffer[i_sample] = 0.0f;
+            for(int n=0;n<33;n++){
+                waveBuffer[i_sample] += 8/M_PI * 1/n*n * sinf(n*M_PI/2)*sinf(n*i_sample);
+            }
+        }
+    }
+    else if(currentItem == String("rectangle"))
+    {
+        for (int i_sample = 0; i_sample<bufferSize; i_sample++){
+            waveBuffer[i_sample] = 0.0f;
+        }
+    }
+
+    PropertySetting_figure->clear();
+    PropertySetting_figure->addDataSet(waveBuffer, bufferSize);
+    delete[] waveBuffer;
 }
 //[/MiscUserCode]
 
@@ -784,7 +834,7 @@ BEGIN_JUCER_METADATA
                  parentClasses="public juce::Component, private Timer, public juce::TextEditor::Listener"
                  constructorParams="" variableInitialisers="" snapPixels="8" snapActive="1"
                  snapShown="1" overlayOpacity="0.330" fixedSize="0" initialWidth="1000"
-                 initialHeight="800">
+                 initialHeight="750">
   <BACKGROUND backgroundColour="ff323e44">
     <RECT pos="16 12 960 380" fill="solid: ff182d0e" hasStroke="0"/>
     <TEXT pos="140 244 27 28" fill="solid: ffffffff" hasStroke="0" text="to"
@@ -886,14 +936,14 @@ BEGIN_JUCER_METADATA
           textBoxHeight="20" skewFactor="1.0" needsCallback="1"/>
   <COMBOBOX name="WaveForm_comboBox" id="27264d42774e190c" memberName="WaveForm_comboBox"
             virtualName="" explicitFocusOrder="0" pos="40 64 150 24" editable="0"
-            layout="33" items="Sin&#10;Cos&#10;Triangle&#10;Rectangle" textWhenNonSelected="Sin"
-            textWhenNoItems="(no choices)"/>
+            layout="33" items="sine&#10;cosine&#10;triangle&#10;square" textWhenNonSelected="Select wave form"
+            textWhenNoItems=""/>
   <TEXTEDITOR name="XLabel_textEditor" id="e27c0ac7c91370c6" memberName="XLabel_textEditor"
-              virtualName="" explicitFocusOrder="0" pos="96 310 112 24" initialText="Amplitude"
+              virtualName="" explicitFocusOrder="0" pos="96 310 112 24" initialText="Sample"
               multiline="0" retKeyStartsLine="0" readonly="0" scrollbars="1"
               caret="1" popupmenu="1"/>
   <TEXTEDITOR name="YLabel_textEditor" id="b82d3d7406b6b50a" memberName="YLabel_textEditor"
-              virtualName="" explicitFocusOrder="0" pos="96 344 112 22" initialText="Sample"
+              virtualName="" explicitFocusOrder="0" pos="96 344 112 22" initialText="Amplitude"
               multiline="0" retKeyStartsLine="0" readonly="0" scrollbars="1"
               caret="1" popupmenu="1"/>
   <TEXTEDITOR name="top_textEditor" id="86eb18733c2acfeb" memberName="top_textEditor"
@@ -913,17 +963,17 @@ BEGIN_JUCER_METADATA
               multiline="0" retKeyStartsLine="0" readonly="0" scrollbars="1"
               caret="1" popupmenu="1"/>
   <TEXTBUTTON name="buckgroundColour_button" id="bd650b13354e23c7" memberName="buckgroundColour_button"
-              virtualName="" explicitFocusOrder="0" pos="328 86 80 24" bgColOff="ff000000"
+              virtualName="" explicitFocusOrder="0" pos="328 88 88 24" bgColOff="ff000000"
               buttonText="FF000000" connectedEdges="0" needsCallback="1" radioGroupId="0"/>
   <TEXTBUTTON name="plotAriaColour_button" id="1697de2136a98347" memberName="plotAriaColour_button"
-              virtualName="" explicitFocusOrder="0" pos="328 118 80 24" bgColOff="ff393643"
+              virtualName="" explicitFocusOrder="0" pos="328 120 88 24" bgColOff="ff393643"
               buttonText="FF393643" connectedEdges="0" needsCallback="1" radioGroupId="0"/>
   <TEXTBUTTON name="GridColour_button" id="50f55b948ce42b7c" memberName="GridColour_button"
-              virtualName="" explicitFocusOrder="0" pos="328 150 80 24" bgColOff="ffffffff"
+              virtualName="" explicitFocusOrder="0" pos="328 152 88 24" bgColOff="ffffffff"
               bgColOn="ffffffff" textCol="ff000000" buttonText="FFFFFFFF" connectedEdges="8"
               needsCallback="1" radioGroupId="0"/>
   <TEXTBUTTON name="fontColour_button" id="a3563fffb9c9422a" memberName="fontColour_button"
-              virtualName="" explicitFocusOrder="0" pos="328 182 80 24" bgColOff="ffffffff"
+              virtualName="" explicitFocusOrder="0" pos="328 184 88 24" bgColOff="ffffffff"
               bgColOn="ffffffff" textCol="ff000000" buttonText="FFFFFFFF" connectedEdges="8"
               needsCallback="1" radioGroupId="0"/>
   <GENERICCOMPONENT name="" id="3b2d7d4faa8bc38f" memberName="timeAxis_figure" virtualName=""

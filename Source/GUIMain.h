@@ -52,8 +52,8 @@ public:
     void update();
     void timerCallback() override;
 
-    void textEditorReturnKeyPressed (juce::TextEditor& textEditorThatWasReturnKeyPressed) override;
-    
+    void textEditorTextChanged (juce::TextEditor& textEditorThatWasReturnKeyPressed) override;
+
     enum
     {
         fftOrder = 10,
@@ -71,6 +71,8 @@ public:
 
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
+    void drawWave();
+
     int plotIdx_;
     std::unique_ptr<dsp::FFT> forwardFFT;
     float fifo [fftSize] = {};

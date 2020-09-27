@@ -63,13 +63,19 @@ public:
     void setBounds(int x, int y, int width, int height);
     
     void addDataSet(float* y, int len);
-    void addDateSet(float* x, float* y, int len);
+    void addDataSet(float* x, float* y, int len);
     
     int creatreDataSet();
     void addPoint(float y, int idx);
     void addPoint(float x, float y, int idx);
     void clear();
     
+    enum class Markers
+    {
+        none,
+        square,
+        circle,
+    };
     
 //==============================================================================
     /* Setter */
@@ -119,6 +125,7 @@ public:
     inline void setMaxBufferingSize(int maxBufferingSize) noexcept {
         maxBufferingSize_ = maxBufferingSize;
     }
+    inline void setMarker(Markers marker) noexcept {marker_ = marker;}
 
     
     /* Getter */
@@ -147,7 +154,7 @@ private:
     Colour plotAriaColour_ = Colour(0xFF393643);
     Colour backGroungColour_ = Colours::black;
     Colour fontColour_ = Colours::white;
-    float fontSize_ = 15.0f;
+    float fontSize_ = 12.0f;
     Range<float> XRange;
     Range<float> YRange;
     float xMin_ = 1.0f;
@@ -157,14 +164,17 @@ private:
     int maxBufferingSize_ = 32768;
     bool autoSettingXAxisRange_ = true;
     bool autoSettingYAxisRange_ = true;
+    int xScaleRes_ = 5;
+    int yScaleRes_ = 5;
+    Markers marker_ = Markers::none;
     
     LinkedListPointer<PlotDataset> plotData_;
 
     GridItem::Margin Padding;
-    int paddingLeft_    = 60;
-    int paddingTop_     = 10;
-    int paddingRight_   = 10;
-    int paddingBottom_  = 60;
+    int paddingLeft_    = 50;
+    int paddingTop_     = 20;
+    int paddingRight_   = 20;
+    int paddingBottom_  = 40;
     
      //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Figure)
