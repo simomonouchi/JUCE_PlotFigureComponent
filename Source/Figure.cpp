@@ -82,6 +82,7 @@ Figure::Figure(Rectangle<int> graphAria):
 Figure::~Figure()
 {
     plotData_.deleteAll();
+    delete axisDravwer;
 }
 
 void Figure::setBounds(int x, int y, int width, int height)
@@ -137,6 +138,10 @@ void Figure::clear()
     plotData_.deleteAll();
 }
 
+void Figure::axesSetUp()
+{
+    axisDravwer = new AxesDrawer(*this);
+}
 
 void Figure::paint(Graphics& g)
 {
@@ -205,82 +210,8 @@ void Figure::paint(Graphics& g)
         }
     }
     
-    /* draw x-axis */
-    g.setFont(Font(fontSize_));
-    float dashLength[]{ 4.0f, 2.0f };
+    axisDravwer->paint(g);
     
-    int y = plotAria_.getBottomLeft().getY();
-    int y0 = plotAria_.getTopLeft().getY();
-    if(xScale_ == Scale::linear)
-    {
-    for (int i = 0; i < xTickRes_; i++)
-    {
-        g.setColour(gridColour_);
-        int x = tickX*dx*i + plotAria_.getBottomLeft().getX();
-        g.drawDashedLine(Line<float>(x, y, x, y0), dashLength,gridLineThick_);
-        
-        g.setColour(fontColour_);
-        float axisValue = XRange_.getStart() + (dx * i);
-        g.drawSingleLineText(String(axisValue), x, y + 15, Justification::horizontallyCentred);
-    }
-}
-else if (xScale_ == Scale::log)
-{
-    int xLength = XRange_.getLength();
-    int exp = log10(xLength);
-    
-    float mantissa = xLength / pow(10, exp);
-    int width = plotAria_.getWidth()/((float)exp+log10f(mantissa));
-    
-    int pos = 0;
-    for(int i=0;i<exp*9+mantissa;i++){
-        g.setColour(gridColour_);
-        pos += width*(LOG10_RATIO[i%9]);
-        int x = pos + plotAria_.getBottomLeft().getX();
-        g.drawDashedLine(Line<float>(x, y, x, y0), dashLength,gridLineThick_);
-        
-        if(i%9==0){
-            g.setColour(fontColour_);
-            g.drawSingleLineText(String(pow(10, i/9)), x, y + 15, Justification::horizontallyCentred);
-        }
-    }
-}
-
-    /* draw y-axis */
-    int x = plotAria_.getTopLeft().getX();
-    int x0 = plotAria_.getTopRight().getX();
-    if(yScale_ == Scale::linear)
-    {
-        for (int i = 0; i < yTickRes_; i++)
-        {
-            g.setColour(gridColour_);
-            int y = plotAria_.getHeight() - (tickY * i * dy) + plotAria_.getTopLeft().getY();
-            g.drawDashedLine(Line<float>(x, y, x0, y), dashLength, gridLineThick_);
-            
-            g.setColour(fontColour_);
-            float axisValue = YRange_.getStart() + (dy * i);
-            g.drawSingleLineText(String(axisValue), x - 5, y, Justification::right);
-        }
-    }
-    else if (yScale_ == Scale::log)
-    {
-        int yLength = YRange_.getLength();
-        int digitRange = 0;
-        while(yLength){
-            yLength /= 10;
-            digitRange++;
-        }
-        
-        float remain = log10(yLength-10*digitRange);
-        int width = plotAria_.getHeight()/ (digitRange+remain);
-        
-        int preY = 0;
-        for(int i=0;i<digitRange*9+(int)remain;i++){
-            int y = preY + width*(LOG10_RATIO[i%9 + 1]);
-            g.drawLine(XRange_.getStart(), y, XRange_.getEnd(), y, 2);
-            preY = y;
-        }
-    }
         
     /* draw x-axis label */
     g.drawText(xLabel_, graphAria_, Justification::centredBottom, true);
