@@ -17,39 +17,54 @@ class PlotDataset
 public:
     PlotDataset(float* x, float* y, int len);
     PlotDataset(float* y, int len);
-    PlotDataset();
-    void add(float y);
-    void add(float x, float y);
-    void clear();
+    PlotDataset(int maxLen);
     ~PlotDataset();
+    void updateDataset(float* x, float* y, int len);
+    void updateDataset(float* y, int len);
+    void addData(float* y, int len);
+    void addData(float* x, float* y, int len);
     
-    struct PlotPoints
-    {
-        float x;
-        float y;
-        LinkedListPointer<PlotPoints> nextListItem;
-    };
-
     /* Setter */
-    inline void setLineColour(Colour lineColour) noexcept { lineColour_ = lineColour; };
-    inline void setMarkerColour(Colour markerColour) noexcept { markerColour_ = markerColour; };
+    inline void setLineColour(Colour lineColour) noexcept
+        { lineColour_ = lineColour; };
+    inline void setMarkerColour(Colour markerColour) noexcept
+        { markerColour_ = markerColour; };
     
     /* Getter */
+    inline bool isAddable() const noexcept { return addable_;}
+    inline float getX(int index) const noexcept
+    {
+        if(addable_){
+            return index;
+        }
+        else{
+            return x_[(additionPoint_+index)%len_];
+        }
+        
+    }
+    inline float getY(int index) const noexcept
+    {
+        return y_[(additionPoint_+index)%len_];
+    }
+    inline int getLength() const noexcept { return len_; }
     inline Colour getLineColour() const noexcept { return lineColour_; };
     inline Colour getMarkerColour() const noexcept { return markerColour_; };
     
-public:
-    LinkedListPointer<PlotDataset> nextListItem;
-    LinkedListPointer<PlotPoints> points;
+
     
 private:
+    bool addable_;
+    float* x_;
+    float* y_;
+    int len_ = 1;
+    int additionPoint_ = 0;
     Colour lineColour_ = Colours::orange;
     Colour markerColour_ = Colours::orange;
 };
 
 //==============================================================================
 
-class Figure : public juce::Component
+class Figure : public juce::Component, private Timer
 {
 public:
     Figure() {}
@@ -61,13 +76,16 @@ public:
     void resized() override;
 //    void setBounds (int x, int y, int w, int h);
     
-    void addDataSet(float* y, int len);
-    void addDataSet(float* x, float* y, int len);
+    void setDataset(float* y, int len, int datasetIndex);
+    void setDataset(float* x, float* y, int len, int datasetIndex);
     
-    int creatreDataSet();
-    void addPoint(float y, int idx);
-    void addPoint(float x, float y, int idx);
+    void creatreAddableDataSet(int maxLen, int datasetIndex);
+    void addData(float* y, int len, int datasetIndex);
+    void addPoint(float* x, float* y, int len, int datasetIndex);
     void clear();
+    
+    void timerCallback() override;
+    
     
     void axesSetUp();
     
@@ -101,6 +119,12 @@ public:
         inline T getLength() const noexcept { return max - min; }
     };
     
+    using Point = struct
+    {
+        float x;
+        float y;
+    };
+    
     /* for log scale */
     static constexpr double LOG10_RATIO[10] ={
         0.0,
@@ -117,38 +141,92 @@ public:
     
 //==============================================================================
     /* Setter */
-    inline void setBackgroundColour(Colour backGroungColour) noexcept {backGroungColour_ = backGroungColour;}
-    inline void setFigureColour(Colour figureColour) noexcept { plotAriaColour_ = figureColour; }
-    inline void setFontSize(float fontSize) noexcept { fontSize_ = fontSize; }
-    inline void setTitle(String title) noexcept { title_ = title; }
-    inline void setXLabel(String xLabel) noexcept { xLabel_ = xLabel; }
-    inline void setYLabel(String yLabel) noexcept { yLabel_ = yLabel; }
+    inline void setBackgroundColour(Colour backGroungColour) noexcept
+    {
+        backGroungColour_ = backGroungColour;
+        repaint();
+    }
+    inline void setFigureColour(Colour figureColour) noexcept
+    {
+        plotAriaColour_ = figureColour;
+        repaint();
+    }
+    inline void setFontSize(float fontSize) noexcept {
+        fontSize_ = fontSize;
+        repaint();
+    }
+    inline void setTitle(String title) noexcept {
+        title_ = title;
+        repaint();
+    }
+    inline void setXLabel(String xLabel) noexcept {
+        xLabel_ = xLabel;
+        repaint();
+    }
+    inline void setYLabel(String yLabel) noexcept
+    {
+        yLabel_ = yLabel;
+        repaint();
+    }
     inline void setXRange(Range<float> xRange) noexcept
     {
         XRange_ = xRange;
-        autoSettingXAxisRange_ = false;
+        axesSetUp();
+        repaint();
     }
     inline void setYRange(Range<float> yRange) noexcept
     {
         YRange_ = yRange;
-        autoSettingYAxisRange_ = false;
+        axesSetUp();
+        repaint();
     }
     
     inline void setPadding(Padding padding) noexcept
     {
         padding_ = padding;
         setPlotAriaBounds();
+        repaint();
     }
-    inline void setMaxBufferingSize(int maxBufferingSize) noexcept {
+    inline void setMaxBufferingSize(int maxBufferingSize) noexcept
+    {
         maxBufferingSize_ = maxBufferingSize;
+        repaint();
     }
-    inline void setMarker(Marker marker) noexcept {marker_ = marker;}
-    inline void setPlotAriaColour(Colour newColour) noexcept {plotAriaColour_ = newColour;}
-    inline void setBackGroungColour(Colour newColour) noexcept {plotAriaColour_ = newColour;}
-    inline void setFontColour(Colour newColour) noexcept {fontColour_ = newColour;}
-    inline void setGridColour(Colour newColour) noexcept {gridColour_ = newColour;}
-    inline void setXScale(Scale scale) noexcept{ xScale_ = scale; }
-    inline void setYScale(Scale scale) noexcept{ yScale_ = scale; }
+    inline void setMarker(Marker marker) noexcept
+    {
+        marker_ = marker;
+        repaint();
+    }
+    inline void setPlotAriaColour(Colour newColour) noexcept
+    {
+        plotAriaColour_ = newColour;
+        repaint();
+    }
+    inline void setBackGroungColour(Colour newColour) noexcept
+    {
+        plotAriaColour_ = newColour;
+        repaint();
+    }
+    inline void setFontColour(Colour newColour) noexcept
+    {
+        fontColour_ = newColour;
+        repaint();
+    }
+    inline void setGridColour(Colour newColour) noexcept
+    {
+        gridColour_ = newColour;
+        repaint();
+    }
+    inline void setXScale(Scale scale) noexcept
+    {
+        xScale_ = scale;
+        repaint();
+    }
+    inline void setYScale(Scale scale) noexcept
+    {
+        yScale_ = scale;
+        repaint();
+    }
     
     /* Getter */
     inline Padding getPadding() const noexcept { return padding_; }
@@ -178,22 +256,25 @@ private:
     Range<float> XRange_ = Range<float>(0.0f, 32768.0f);
     Range<float> YRange_ = Range<float>(-1.0f, 1.0f);
     int maxBufferingSize_ = 32768;
-    bool autoSettingXAxisRange_ = true;
-    bool autoSettingYAxisRange_ = true;
     int xTickRes_ = 5;
     int yTickRes_ = 5;
     Scale xScale_ = Scale::linear;
     Scale yScale_ = Scale::linear;
     Marker marker_ = Marker::none;
+    int markerSize_ = 2;
     int gridLineThick_ = 2;
     
-    LinkedListPointer<PlotDataset> plotData_;
+//    LinkedListPointer<PlotDataset> plotData_;
+    PlotDataset* plotdattaset[10];
+    int numUsingPlotDataSet=0;
     
     class AxesDrawer
     {
     public:
         AxesDrawer(Figure& figure);
         ~AxesDrawer() {}
+        
+        void calcAxesPosition();
         
         void drawAxes(Graphics& g);
         

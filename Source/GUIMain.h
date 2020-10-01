@@ -48,7 +48,7 @@ public:
 
     //==============================================================================
     //[UserMethods]     -- You can add your own custom methods in this section.
-    void addMicdata(float sample);
+    void addMicdata(float* data, int len);
     void timerCallback() override;
 
     void textEditorTextChanged (juce::TextEditor& textEditorThatWasReturnKeyPressed) override;
@@ -72,14 +72,12 @@ private:
     //[UserVariables]   -- You can add your own custom variables in this section.
     void drawWave();
 
-    int micDataIndex_;
+    int micDatasetIndex_;
 
     std::unique_ptr<dsp::FFT> forwardFFT_;
     float fifo_ [fftSize] = {};
     float fftData_ [2 * fftSize];
     int fifoIndex_ = 0;
-
-    bool plotDataReady_=false;
 
     int Fs = 48000;
     //[/UserVariables]

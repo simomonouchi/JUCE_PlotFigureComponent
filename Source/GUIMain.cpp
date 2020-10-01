@@ -253,7 +253,7 @@ GUIMain::GUIMain ()
     bottom_textEditor->addListener(this);
     Left_textEditor->addListener(this);
     Right_textEditor->addListener(this);
-    
+
 
     forwardFFT_.reset (new dsp::FFT(fftOrder));
 
@@ -263,19 +263,17 @@ GUIMain::GUIMain ()
     WaveForm_comboBox->setText("sine");
     amplitude_slider->setValue(0.8);
     freq_slider->setValue(440);
-    PropertySetting_figure->axesSetUp();
     drawWave();
 
     timeAxis_figure->setPadding(Figure::Padding{40, 20, 20, 30});
     timeAxis_figure->setYRange(Range<float>(-0.5, 0.5));
-    micDataIndex_ = timeAxis_figure->creatreDataSet();
-    timeAxis_figure->axesSetUp();
-    
+    micDatasetIndex_ = 0;
+    timeAxis_figure->creatreAddableDataSet(32768, micDatasetIndex_);
+
     freqAxis_figure->setPadding(Figure::Padding{40, 20, 20, 30});
-    freqAxis_figure->setXRange(Range<float>(0, 10000));
+    freqAxis_figure->setXRange(Range<float>(0, 24000));
     freqAxis_figure->setYRange(Range<float>(-120, 0));
     freqAxis_figure->setXScale(Figure::Scale::log);
-    freqAxis_figure->axesSetUp();
 
     //[/UserPreSize]
 
@@ -609,22 +607,7 @@ void GUIMain::paint (juce::Graphics& g)
                     juce::Justification::centred, true);
     }
 
-    {
-        int x = 316, y = 428, width = 148, height = 20;
-        juce::String text (TRANS("input : 0 ch"));
-        juce::Colour fillColour = juce::Colours::white;
-        //[UserPaintCustomArguments] Customize the painting arguments here..
-        //[/UserPaintCustomArguments]
-        g.setColour (fillColour);
-        g.setFont (juce::Font (15.00f, juce::Font::plain).withTypefaceStyle ("Regular"));
-        g.drawText (text, x, y, width, height,
-                    juce::Justification::centredLeft, true);
-    }
-
     //[UserPaint] Add your own custom painting code here..
-//    PropertySetting_figure->paint(g);
-//    timeAxis_figure->paint(g);
-//    freqAxis_figure->paint(g);
     //[/UserPaint]
 }
 
@@ -713,7 +696,7 @@ void GUIMain::buttonClicked (juce::Button* buttonThatWasClicked)
         auto* colourSelector = new Selector(PropertySetting_figure->getGridColour());
         Colour newColour;
         colourSelector->onChange = [&](auto& c){
-            PropertySetting_figure->setFontColour(c);
+            PropertySetting_figure->setGridColour(c);
             gridColour_button->setColour(TextButton::buttonColourId, c);
         };
 
@@ -800,21 +783,22 @@ void GUIMain::textEditorTextChanged (juce::TextEditor& textEditorThatWasTextChan
     }
 }
 
-void GUIMain::addMicdata(float sample)
+void GUIMain::addMicdata(float* data, int len)
 {
-    timeAxis_figure->addPoint(sample, micDataIndex_);
+    timeAxis_figure->addData(data, len, micDatasetIndex_);
 
-    fifo_[fifoIndex_] = sample;
-    fifoIndex_ = (fifoIndex_+1)%fftSize;
-
-    plotDataReady_ = true;
+    for(int i=0; i<len; i++){
+        fifo_[fifoIndex_] = data[i];
+        fifoIndex_ = (fifoIndex_+1)%fftSize;
+    }
 }
 
 void GUIMain::timerCallback()
 {
     /* fft */
     memcpy (fftData_, fifo_, sizeof (fifo_));
-    forwardFFT_->performFrequencyOnlyForwardTransform (fftData_);
+    forwardFFT_->performFrequencyOnlyForwardTransform
+    (fftData_);
     float* x = new float[fftSize/2];
 
     for(int i=0;i<fftSize/2;i++)
@@ -824,16 +808,10 @@ void GUIMain::timerCallback()
         x[i] = 24000/(fftSize/2)*i;
     }
 
-    freqAxis_figure->clear();
-    freqAxis_figure->addDataSet(x, fftData_, fftSize/2);
+    freqAxis_figure->setDataset(x, fftData_, fftSize/2, 0);
 
     delete[] x;
 
-    if(plotDataReady_)
-    {
-        repaint();
-        plotDataReady_ = false;
-    }
 }
 
 void GUIMain::drawWave()
@@ -872,13 +850,12 @@ void GUIMain::drawWave()
     else if(currentItem == String("square"))
     {
         for (int i_sample = 0; i_sample<bufferSize; i_sample++){
-            float x = fmod(2*M_PI*freq/Fs*i_sample, 2*M_PI);
-            waveBuffer[i_sample] = amp * (0<x && x<M_PI ? 1: -1);
+            float x = fmod(2.0f*M_PI*freq/Fs*i_sample, 2.0f*M_PI);
+            waveBuffer[i_sample] = amp * (0<x && x<M_PI ? 1.0f: -1.0f);
         }
     }
 
-    PropertySetting_figure->clear();
-    PropertySetting_figure->addDataSet(waveBuffer, bufferSize);
+    PropertySetting_figure->setDataset(waveBuffer, bufferSize, 0);
     delete[] waveBuffer;
 }
 
@@ -968,9 +945,6 @@ BEGIN_JUCER_METADATA
     <TEXT pos="188 164 36 36" fill="solid: ffffffff" hasStroke="0" text="Hz"
           fontname="Default font" fontsize="15.0" kerning="0.0" bold="0"
           italic="0" justification="36"/>
-    <TEXT pos="316 428 148 20" fill="solid: ffffffff" hasStroke="0" text="input : 0 ch"
-          fontname="Default font" fontsize="15.0" kerning="0.0" bold="0"
-          italic="0" justification="33"/>
   </BACKGROUND>
   <TEXTEDITOR name="xMin_textEditor" id="f941bb328e2f390d" memberName="xMin_textEditor"
               virtualName="" explicitFocusOrder="0" pos="104 246 41 24" initialText="1"

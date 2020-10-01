@@ -49,14 +49,10 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
     {
         auto* channelData = bufferToFill.buffer->getReadPointer (0, bufferToFill.startSample);
 
-        for (auto i = 0; i < bufferToFill.numSamples; ++i){
-            auto data = channelData[i];
-            
-            if (data>1.0f) data = 1.0f;
-            else if (data<-1.0f) data = -1.0f;
-            
-            guimain.addMicdata(data);
-        }
+        float buff[512];
+        memcpy(buff, channelData, sizeof(float)*512);
+
+        guimain.addMicdata(buff, 512);
     }
 
     // For more details, see the help for AudioProcessor::getNextAudioBlock()
