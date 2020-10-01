@@ -10,11 +10,6 @@
 
 #include "Figure.h"
 
-//PlotPoint::PlotPoint(float x, float y)
-// :  x(x), y(y)
-//{
-//}
-
 PlotDataset::PlotDataset(float* x, float* y, int len)
 {
     for(int sample = 0; sample<len;sample++){
@@ -62,34 +57,17 @@ PlotDataset::~PlotDataset()
 void Figure::setPlotAriaBounds() noexcept
 {
     plotAria_.setBounds(
-            graphAria_.getX() + padding_.left,
-            graphAria_.getY() + padding_.top,
-            graphAria_.getWidth() - padding_.right - padding_.left,
-            graphAria_.getHeight() - padding_.bottom - padding_.top
+            padding_.left,
+            padding_.top,
+            getWidth() - padding_.right - padding_.left,
+            getHeight() - padding_.bottom - padding_.top
      );
-}
-
-Figure::Figure()
-{
-}
-
-Figure::Figure(Rectangle<int> graphAria):
-    graphAria_(graphAria)
-{
-    setPlotAriaBounds();
 }
 
 Figure::~Figure()
 {
     plotData_.deleteAll();
-    delete axisDravwer;
-}
-
-void Figure::setBounds(int x, int y, int width, int height)
-{
-    graphAria_.setBounds(x, y, width, height);
-    
-    setPlotAriaBounds();
+    delete axisDrawer_;
 }
 
 void Figure::addDataSet(float* y, int len)
@@ -140,21 +118,25 @@ void Figure::clear()
 
 void Figure::axesSetUp()
 {
-    axisDravwer = new AxesDrawer(*this);
+    axisDrawer_ = new AxesDrawer(*this);
 }
 
-void Figure::paint(Graphics& g)
+void Figure::paint (juce::Graphics& g)
 {
+    if(PropertyChanged_){
+        setPlotAriaBounds();
+        axesSetUp();
+        PropertyChanged_ = false;
+    }
+
     g.setColour(backGroungColour_);
-    g.fillRect(graphAria_);
+    g.fillAll();
     
     g.setColour(plotAriaColour_);
     g.fillRect(plotAria_);
     
     float xLength = XRange_.getLength();
     float yLength = YRange_.getLength();
-    float dx = xLength / (xTickRes_-1);
-    float dy = yLength / (yTickRes_-1);
     float tickX = plotAria_.getWidth() / xLength;
     float tickY = plotAria_.getHeight() / yLength;
 
@@ -209,21 +191,22 @@ void Figure::paint(Graphics& g)
             dataset = dataset->nextListItem;
         }
     }
-    
-    axisDravwer->paint(g);
+
+    /* draw axes */
+    axisDrawer_->drawAxes(g);
     
         
     /* draw x-axis label */
-    g.drawText(xLabel_, graphAria_, Justification::centredBottom, true);
+    g.drawText(xLabel_, plotAria_, Justification::centredBottom, true);
 
     /* draw y-axis label (rotate 90 deg.)*/
     g.saveState();
     g.addTransform(AffineTransform::rotation(
         -MathConstants<float>::halfPi,
-        graphAria_.getX()+10,
-        graphAria_.getCentreY()
+        getX()+10,
+        getWidth()/2
      ));
-    g.drawText(yLabel_, graphAria_, Justification::centredLeft, true);
+    g.drawText(yLabel_, plotAria_, Justification::centredLeft, true);
     g.restoreState();
 }
 
@@ -232,9 +215,154 @@ void Figure::resized()
     
 }
 
+Figure::AxesDrawer::AxesDrawer(Figure& figure)
+: figure_(figure)
+{
+    
+    float xLength = figure.XRange_.getLength();
+    float yLength = figure.YRange_.getLength();
+    float tickX = figure.plotAria_.getWidth() / xLength;
+    float tickY = figure.plotAria_.getHeight() / yLength;
+    float dx = xLength / (figure.xTickRes_-1);
+    float dy = yLength / (figure.yTickRes_-1);
+    
+    /* X axis */
+    xGridYPos_ = Limits<int>{figure.plotAria_.getBottom(), figure.plotAria_.getY()};
+    if(figure.xScale_ == Scale::linear)
+    {
+        numXGridLine_ = figure.xTickRes_;
+        xGridXPos_ = new float[figure.xTickRes_];
+        xAxisTickLabel_ = new float[figure.xTickRes_];
+        for (int i = 0; i < numXGridLine_; i++)
+        {
+            xGridXPos_[i] = tickX*dx*i + figure.plotAria_.getX();
+            xAxisTickLabel_[i] = figure.XRange_.getStart() + (dx * i);
+        }
+    }
+    else if(figure.xScale_ == Scale::log)
+    {
+        float xLength = figure.XRange_.getLength();
+        int exp = log10(xLength);
+
+        float frac = (xLength / pow(10, exp));
+        int width = figure.plotAria_.getWidth()/(exp+log10(frac));
+        numXGridLine_ = exp*10+floor(frac);
+        
+        xGridXPos_ = new float[numXGridLine_];
+        xAxisTickLabel_ = new float[exp+1];
+        
+        float* tickLabel = xAxisTickLabel_;
+        float pos = 0;
+        for(int i=0;i<numXGridLine_;i++){
+            pos += width*(LOG10_RATIO[i%10]);
+            xGridXPos_[i] = pos + figure.plotAria_.getX();
+            if(i%10==0) {
+                *tickLabel = pow(10, i/9);
+                tickLabel++;
+            }
+        }
+    }
+
+/* Y axis */
+yGridXPos_ = Limits<int>{figure.plotAria_.getX(), figure.plotAria_.getRight()};
+if(figure.yScale_ == Scale::linear)
+{
+    numYGridLine_ = figure.yTickRes_;
+    yGridYPos_ = new float[figure.yTickRes_];
+    yAxisTickLabel_ = new float[figure.yTickRes_];
+    for (int i = 0; i < numYGridLine_; i++)
+    {
+        yGridYPos_[i] = tickY*dy*i + figure.plotAria_.getY();
+        yAxisTickLabel_[i] = figure.YRange_.getStart() + (dy * i);
+    }
+}
+else if(figure.yScale_ == Scale::log)
+{
+    float yLength = figure.YRange_.getLength();
+    int exp = log10(yLength);
+
+    float frac = (yLength / pow(10, exp));
+    int width = figure.plotAria_.getWidth()/(exp+log10(frac));
+    numYGridLine_ = exp*10+floor(frac);
+    
+    yGridYPos_ = new float[numYGridLine_];
+    yAxisTickLabel_ = new float[exp+1];
+    
+    float* tickLabel = yAxisTickLabel_;
+    float pos = 0;
+    for(int i=0;i<numYGridLine_;i++){
+        pos += width*(LOG10_RATIO[i%10]);
+        yGridYPos_[i] = pos + figure.plotAria_.getBottom();
+        if(i%10==0) {
+            *tickLabel = pow(10, i/9);
+            tickLabel++;
+        }
+    }
+}
+}
 
 
+void Figure::AxesDrawer::drawAxes (Graphics& g)
+{
+    g.setFont(Font(figure_.fontSize_));
+    g.setColour(figure_.gridColour_);
 
+    /* X axis */
+    {
+    float* tickLabel = xAxisTickLabel_;
+    
+    for(int i=0;i<numXGridLine_;i++)
+    {
+        g.setColour(figure_.gridColour_);
+        
+        float x = xGridXPos_[i];
+        g.drawDashedLine(
+             Line<float>(x, xGridYPos_.min, x, xGridYPos_.max),
+             dashLength_,
+             figure_.gridLineThick_
+        );
+        
+        if (figure_.xScale_ == Scale::log && i%10) { continue; }
+        
+        g.setColour(figure_.fontColour_);
+        g.drawSingleLineText(
+          String(*tickLabel),
+            x,
+            xGridYPos_.min + 15,
+            Justification::horizontallyCentred
+        );
+        tickLabel++;
+    }
+    }
+    
+    /* Y axis */
+    {
+    float* tickLabel = yAxisTickLabel_;
+    
+    for(int i=0;i<numYGridLine_;i++)
+    {
+        g.setColour(figure_.gridColour_);
+        
+        float y = yGridYPos_[i];
+        g.drawDashedLine(
+             Line<float>(yGridXPos_.min, y, yGridXPos_.max, y),
+             dashLength_,
+             figure_.gridLineThick_
+        );
+        
+        if (figure_.yScale_ == Scale::log && i%10) { continue; }
+        
+        g.setColour(figure_.fontColour_);
+        g.drawSingleLineText(
+          String(*tickLabel),
+            yGridXPos_.min -5,
+            y,
+            Justification::right
+        );
+        tickLabel++;
+    }
+    }
+}
 
 
 

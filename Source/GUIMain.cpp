@@ -253,6 +253,7 @@ GUIMain::GUIMain ()
     bottom_textEditor->addListener(this);
     Left_textEditor->addListener(this);
     Right_textEditor->addListener(this);
+    
 
     forwardFFT_.reset (new dsp::FFT(fftOrder));
 
@@ -621,9 +622,9 @@ void GUIMain::paint (juce::Graphics& g)
     }
 
     //[UserPaint] Add your own custom painting code here..
-    PropertySetting_figure->paint(g);
-    timeAxis_figure->paint(g);
-    freqAxis_figure->paint(g);
+//    PropertySetting_figure->paint(g);
+//    timeAxis_figure->paint(g);
+//    freqAxis_figure->paint(g);
     //[/UserPaint]
 }
 
