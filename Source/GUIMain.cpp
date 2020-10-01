@@ -269,8 +269,9 @@ GUIMain::GUIMain ()
     micDataIndex_ = timeAxis_figure->creatreDataSet();
 
     freqAxis_figure->setPadding(Figure::Padding{40, 20, 20, 30});
-    freqAxis_figure->setXRange(Range<float>(0, 24000));
+    freqAxis_figure->setXRange(Range<float>(0, 8000));
     freqAxis_figure->setYRange(Range<float>(-120, 0));
+    freqAxis_figure->setXScale(Figure::Scale::log);
 
     //[/UserPreSize]
 

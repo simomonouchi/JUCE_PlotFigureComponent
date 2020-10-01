@@ -70,11 +70,19 @@ public:
     void addPoint(float x, float y, int idx);
     void clear();
     
-    enum class Markers
+    enum class Marker
     {
         none,
         square,
         circle,
+    };
+    
+    enum class Scale
+    {
+        linear,
+        log,
+        // symlog // TBD
+        // logit  // TBD
     };
     
     using Padding = struct {
@@ -82,6 +90,20 @@ public:
         int top;
         int right;
         int bottom;
+    };
+    
+    /* for log scale */
+    static constexpr double LOG10_RATIO[10] ={
+        0.0,
+        0.301029995663981198017467022509663365781307220458984375,
+        0.17609125905568123737765517944353632628917694091796875,
+        0.124938736608299960639811843066127039492130279541015625,
+        0.0969100130080564614587501637288369238376617431640625,
+        0.07918124604762477591890501571469940245151519775390625,
+        0.06694678963061317933380678368848748505115509033203125,
+        0.05799194697768672579485382811981253325939178466796875,
+        0.05115252244738133224899456763523630797863006591796875,
+        0.04575749056067512920975559609360061585903167724609375,
     };
     
 //==============================================================================
@@ -111,11 +133,13 @@ public:
     inline void setMaxBufferingSize(int maxBufferingSize) noexcept {
         maxBufferingSize_ = maxBufferingSize;
     }
-    inline void setMarker(Markers marker) noexcept {marker_ = marker;}
+    inline void setMarker(Marker marker) noexcept {marker_ = marker;}
     inline void setPlotAriaColour(Colour newColour) noexcept {plotAriaColour_ = newColour;}
     inline void setBackGroungColour(Colour newColour) noexcept {plotAriaColour_ = newColour;}
     inline void setFontColour(Colour newColour) noexcept {fontColour_ = newColour;}
     inline void setGridColour(Colour newColour) noexcept {gridColour_ = newColour;}
+    inline void setXScale(Scale scale) noexcept{ xScale_ = scale; }
+    inline void setYScale(Scale scale) noexcept{ yScale_ = scale; }
     
     /* Getter */
     inline Padding getPadding() const noexcept { return padding_; }
@@ -149,8 +173,10 @@ private:
     bool autoSettingYAxisRange_ = true;
     int xTickRes_ = 5;
     int yTickRes_ = 5;
-    Markers marker_ = Markers::none;
-    int gridLineThick = 2;
+    Scale xScale_ = Scale::linear;
+    Scale yScale_ = Scale::linear;
+    Marker marker_ = Marker::none;
+    int gridLineThick_ = 2;
     
     LinkedListPointer<PlotDataset> plotData_;
     
