@@ -34,17 +34,12 @@ public:
     inline bool isAddable() const noexcept { return addable_;}
     inline float getX(int index) const noexcept
     {
-        if(addable_){
-            return index;
-        }
-        else{
-            return x_[(additionPoint_+index)%len_];
-        }
-        
+        if(addable_){ return index; }
+        else{ return x_.get()[(additionPoint_+index)%len_]; }
     }
     inline float getY(int index) const noexcept
     {
-        return y_[(additionPoint_+index)%len_];
+        return y_.get()[(additionPoint_+index)%len_];
     }
     inline int getLength() const noexcept { return len_; }
     inline Colour getLineColour() const noexcept { return lineColour_; };
@@ -54,8 +49,8 @@ public:
     
 private:
     bool addable_;
-    float* x_;
-    float* y_;
+    std::unique_ptr<float> x_;
+    std::unique_ptr<float> y_;
     int len_ = 1;
     int additionPoint_ = 0;
     Colour lineColour_ = Colours::orange;
@@ -67,17 +62,20 @@ private:
 class Figure : public juce::Component, private Timer
 {
 public:
-    Figure() {}
+    Figure()
+    {
+        plotter.reset(new Plotter(*this));
+        addAndMakeVisible(plotter.get());
+    }
     ~Figure() override;
 
 //==============================================================================
 
     void paint (juce::Graphics& g)  override;
     void resized() override;
-//    void setBounds (int x, int y, int w, int h);
     
-    void setDataset(float* y, int len, int datasetIndex);
-    void setDataset(float* x, float* y, int len, int datasetIndex);
+    void setDataset(float* y, int len, int datasetIndex, Colour lineColour=Colours::orange);
+    void setDataset(float* x, float* y, int len, int datasetIndex, Colour lineColour=Colours::orange);
     
     void creatreAddableDataSet(int maxLen, int datasetIndex);
     void addData(float* y, int len, int datasetIndex);
@@ -264,15 +262,32 @@ private:
     int markerSize_ = 2;
     int gridLineThick_ = 2;
     
-//    LinkedListPointer<PlotDataset> plotData_;
     PlotDataset* plotdattaset[10];
     int numUsingPlotDataSet=0;
     
+    //==============================================================================
+    /* [inner class] Plotter (plot data component) */
+    class Plotter : public Component
+    {
+    public:
+        Plotter(Figure& figure) :figure_(figure) {}
+        ~Plotter() override {}
+        
+        void paint (juce::Graphics& g) override;
+        
+    private:
+        Figure& figure_;
+    };
+    
+    std::unique_ptr<Plotter> plotter;
+    
+    //==============================================================================
+    /* [inner class] AxesDrawer */
     class AxesDrawer
     {
     public:
         AxesDrawer(Figure& figure);
-        ~AxesDrawer() {}
+        ~AxesDrawer();
         
         void calcAxesPosition();
         
@@ -285,15 +300,15 @@ private:
         
         /* X axis */
         int numXGridLine_;
-        float* xGridXPos_;
+        std::unique_ptr<float> xGridXPos_;
         Limits<int>  xGridYPos_;
-        float* xAxisTickLabel_;
+        std::unique_ptr<float> xAxisTickLabel_;
         
         /* Y axis */
         int numYGridLine_;
         Limits<int> yGridXPos_;
-        float* yGridYPos_;
-        float* yAxisTickLabel_;
+        std::unique_ptr<float> yGridYPos_;
+        std::unique_ptr<float> yAxisTickLabel_;
     };
     
     AxesDrawer* axisDrawer_;

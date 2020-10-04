@@ -19,7 +19,7 @@
 
 //[Headers] You can add your own extra header files here...
 #include "Figure.h"
-#include "Selector.h"
+#include "ColourSelectBox.h"
 //[/Headers]
 
 #include "GUIMain.h"
@@ -96,21 +96,7 @@ GUIMain::GUIMain ()
     amplitude_slider->setColour (juce::Slider::rotarySliderOutlineColourId, juce::Colour (0xff495e68));
     amplitude_slider->addListener (this);
 
-    amplitude_slider->setBounds (39, 120, 81, 72);
-
-    WaveForm_comboBox.reset (new juce::ComboBox ("WaveForm_comboBox"));
-    addAndMakeVisible (WaveForm_comboBox.get());
-    WaveForm_comboBox->setEditableText (false);
-    WaveForm_comboBox->setJustificationType (juce::Justification::centredLeft);
-    WaveForm_comboBox->setTextWhenNothingSelected (TRANS("Select wave form"));
-    WaveForm_comboBox->setTextWhenNoChoicesAvailable (juce::String());
-    WaveForm_comboBox->addItem (TRANS("sine"), 1);
-    WaveForm_comboBox->addItem (TRANS("cosine"), 2);
-    WaveForm_comboBox->addItem (TRANS("triangle"), 3);
-    WaveForm_comboBox->addItem (TRANS("square"), 4);
-    WaveForm_comboBox->addListener (this);
-
-    WaveForm_comboBox->setBounds (40, 64, 176, 24);
+    amplitude_slider->setBounds (39, 88, 81, 88);
 
     XLabel_textEditor.reset (new juce::TextEditor ("XLabel_textEditor"));
     addAndMakeVisible (XLabel_textEditor.get());
@@ -239,7 +225,7 @@ GUIMain::GUIMain ()
     freq_slider->setColour (juce::Slider::rotarySliderOutlineColourId, juce::Colour (0xff495e68));
     freq_slider->addListener (this);
 
-    freq_slider->setBounds (136, 120, 81, 72);
+    freq_slider->setBounds (136, 88, 81, 88);
 
 
     //[UserPreSize]
@@ -254,16 +240,14 @@ GUIMain::GUIMain ()
     Left_textEditor->addListener(this);
     Right_textEditor->addListener(this);
 
-
     forwardFFT_.reset (new dsp::FFT(fftOrder));
 
     PropertySetting_figure->setXLabel(XLabel_textEditor->getText());
     PropertySetting_figure->setYLabel(YLabel_textEditor->getText());
     PropertySetting_figure->setXRange(Range<float>(0, 1024));
-    WaveForm_comboBox->setText("sine");
     amplitude_slider->setValue(0.8);
-    freq_slider->setValue(440);
-    drawWave();
+    freq_slider->setValue(100);
+    drawWaves();
 
     timeAxis_figure->setPadding(Figure::Padding{40, 20, 20, 30});
     timeAxis_figure->setYRange(Range<float>(-0.5, 0.5));
@@ -296,7 +280,6 @@ GUIMain::~GUIMain()
     yMax_textEditor = nullptr;
     PropertySetting_figure = nullptr;
     amplitude_slider = nullptr;
-    WaveForm_comboBox = nullptr;
     XLabel_textEditor = nullptr;
     YLabel_textEditor = nullptr;
     top_textEditor = nullptr;
@@ -359,7 +342,7 @@ void GUIMain::paint (juce::Graphics& g)
     }
 
     {
-        int x = 39, y = 100, width = 81, height = 26;
+        int x = 39, y = 60, width = 81, height = 26;
         juce::String text (TRANS("Amplitude"));
         juce::Colour fillColour = juce::Colours::white;
         //[UserPaintCustomArguments] Customize the painting arguments here..
@@ -371,7 +354,7 @@ void GUIMain::paint (juce::Graphics& g)
     }
 
     {
-        int x = 132, y = 100, width = 84, height = 26;
+        int x = 132, y = 60, width = 84, height = 26;
         juce::String text (TRANS("Frequency"));
         juce::Colour fillColour = juce::Colours::white;
         //[UserPaintCustomArguments] Customize the painting arguments here..
@@ -596,7 +579,7 @@ void GUIMain::paint (juce::Graphics& g)
     }
 
     {
-        int x = 188, y = 164, width = 36, height = 36;
+        int x = 188, y = 148, width = 36, height = 36;
         juce::String text (TRANS("Hz"));
         juce::Colour fillColour = juce::Colours::white;
         //[UserPaintCustomArguments] Customize the painting arguments here..
@@ -623,7 +606,7 @@ void GUIMain::resized()
 void GUIMain::sliderValueChanged (juce::Slider* sliderThatWasMoved)
 {
     //[UsersliderValueChanged_Pre]
-    drawWave();
+    drawWaves();
     //[/UsersliderValueChanged_Pre]
 
     if (sliderThatWasMoved == amplitude_slider.get())
@@ -642,22 +625,6 @@ void GUIMain::sliderValueChanged (juce::Slider* sliderThatWasMoved)
     //[/UsersliderValueChanged_Post]
 }
 
-void GUIMain::comboBoxChanged (juce::ComboBox* comboBoxThatHasChanged)
-{
-    //[UsercomboBoxChanged_Pre]
-    //[/UsercomboBoxChanged_Pre]
-
-    if (comboBoxThatHasChanged == WaveForm_comboBox.get())
-    {
-        //[UserComboBoxCode_WaveForm_comboBox] -- add your combo box handling code here..
-        drawWave();
-        //[/UserComboBoxCode_WaveForm_comboBox]
-    }
-
-    //[UsercomboBoxChanged_Post]
-    //[/UsercomboBoxChanged_Post]
-}
-
 void GUIMain::buttonClicked (juce::Button* buttonThatWasClicked)
 {
     //[UserbuttonClicked_Pre]
@@ -666,11 +633,16 @@ void GUIMain::buttonClicked (juce::Button* buttonThatWasClicked)
     if (buttonThatWasClicked == buckgroundColour_button.get())
     {
         //[UserButtonCode_buckgroundColour_button] -- add your button handler code here..
-        auto* colourSelector = new Selector(PropertySetting_figure->getBackgroundColour());
-        Colour newColour;
+        auto* colourSelector = new ColourSelectBox(PropertySetting_figure->getBackgroundColour());
+
         colourSelector->onChange = [&](auto& c){
             PropertySetting_figure->setBackgroundColour(c);
             buckgroundColour_button->setColour(TextButton::buttonColourId, c);
+
+            std::stringstream ss;
+            ss << std::uppercase << std::hex << c.getARGB();
+            buckgroundColour_button->setButtonText(ss.str());
+
         };
 
         CallOutBox::launchAsynchronously (colourSelector, buckgroundColour_button->getScreenBounds(), nullptr);
@@ -679,11 +651,15 @@ void GUIMain::buttonClicked (juce::Button* buttonThatWasClicked)
     else if (buttonThatWasClicked == plotAriaColour_button.get())
     {
         //[UserButtonCode_plotAriaColour_button] -- add your button handler code here..
-        auto* colourSelector = new Selector(PropertySetting_figure->getPlotAriaColour());
-        Colour newColour;
+        auto* colourSelector = new ColourSelectBox(PropertySetting_figure->getPlotAriaColour());
+
         colourSelector->onChange = [&](auto& c){
             PropertySetting_figure->setPlotAriaColour(c);
             plotAriaColour_button->setColour(TextButton::buttonColourId, c);
+
+            std::stringstream ss;
+            ss << std::uppercase << std::hex << c.getARGB();
+            plotAriaColour_button->setButtonText(ss.str());
         };
 
         CallOutBox::launchAsynchronously (colourSelector, plotAriaColour_button->getScreenBounds(), nullptr);
@@ -693,11 +669,15 @@ void GUIMain::buttonClicked (juce::Button* buttonThatWasClicked)
     {
         //[UserButtonCode_gridColour_button] -- add your button handler code here..
 
-        auto* colourSelector = new Selector(PropertySetting_figure->getGridColour());
-        Colour newColour;
+        auto* colourSelector = new ColourSelectBox(PropertySetting_figure->getGridColour());
+
         colourSelector->onChange = [&](auto& c){
             PropertySetting_figure->setGridColour(c);
             gridColour_button->setColour(TextButton::buttonColourId, c);
+
+            std::stringstream ss;
+            ss << std::uppercase << std::hex << c.getARGB();
+            gridColour_button->setButtonText(ss.str());
         };
 
         CallOutBox::launchAsynchronously (colourSelector, gridColour_button->getScreenBounds(), nullptr);
@@ -706,11 +686,15 @@ void GUIMain::buttonClicked (juce::Button* buttonThatWasClicked)
     else if (buttonThatWasClicked == fontColour_button.get())
     {
         //[UserButtonCode_fontColour_button] -- add your button handler code here..
-        auto* colourSelector = new Selector(PropertySetting_figure->getFontColour());
-        Colour newColour;
+        auto* colourSelector = new ColourSelectBox(PropertySetting_figure->getFontColour());
+
         colourSelector->onChange = [&](auto& c){
             PropertySetting_figure->setFontColour(c);
             fontColour_button->setColour(TextButton::buttonColourId, c);
+
+            std::stringstream ss;
+            ss << std::uppercase << std::hex << c.getARGB();
+            fontColour_button->setButtonText(ss.str());
         };
 
         CallOutBox::launchAsynchronously (colourSelector, fontColour_button->getScreenBounds(), nullptr);
@@ -814,48 +798,36 @@ void GUIMain::timerCallback()
 
 }
 
-void GUIMain::drawWave()
+void GUIMain::drawWaves()
 {
-    int bufferSize = 1024;
+    int bufferSize = 4096;
     auto* waveBuffer = new float[bufferSize];
-
     float amp = amplitude_slider.get()->getValue();
     float freq = freq_slider.get()->getValue();
 
-    String currentItem = WaveForm_comboBox->getText();
-
-    if (currentItem == String("sine"))
-    {
-        for (int i_sample = 0; i_sample<bufferSize; i_sample++){
-            waveBuffer[i_sample] = amp*sinf(2.0f*float_Pi*freq/Fs*i_sample);
-        }
+    /* draw sine */
+    for (int sample = 0; sample<bufferSize; sample++){
+        waveBuffer[sample] = amp*sinf(2.0f*float_Pi*freq/Fs*sample);
     }
-    else if(currentItem == String("cosine"))
-    {
-        for (int i_sample = 0; i_sample<bufferSize; i_sample++){
-            waveBuffer[i_sample] = amp*cosf(2.0f*float_Pi*freq/Fs*i_sample);
-        }
-    }
-    else if(currentItem == String("triangle"))
-    {
-
-        for (auto i_sample = 0; i_sample<bufferSize; i_sample++){
-            waveBuffer[i_sample] = 0.0f;
-            for(auto n=1;n<freq;n++){
-                waveBuffer[i_sample] += amp * 8.0f/(M_PI*M_PI) * 1.0f/(float)(n*n)
-                  * sinf((float)n*M_PI/2.0f)*sinf(2.0f*M_PI*freq/Fs*n*i_sample);
-             }
-        }
-    }
-    else if(currentItem == String("square"))
-    {
-        for (int i_sample = 0; i_sample<bufferSize; i_sample++){
-            float x = fmod(2.0f*M_PI*freq/Fs*i_sample, 2.0f*M_PI);
-            waveBuffer[i_sample] = amp * (0<x && x<M_PI ? 1.0f: -1.0f);
-        }
-    }
-
     PropertySetting_figure->setDataset(waveBuffer, bufferSize, 0);
+
+    /* draw triangle wave */
+//    for (auto sample = 0; sample<bufferSize; sample++){
+//        waveBuffer[sample] = 0.0f;
+//        for(auto n=1;n<freq;n++){
+//            waveBuffer[sample] += amp * 8.0f/(M_PI*M_PI) * 1.0f/(float)(n*n)
+//              * sinf((float)n*M_PI/2.0f)*sinf(2.0f*M_PI*freq/Fs*n*sample);
+//         }
+//    }
+//    PropertySetting_figure->setDataset(waveBuffer, bufferSize, 1, Colours::magenta);
+
+    /* draw square wave */
+    for (int sample = 0; sample<bufferSize; sample++){
+        float x = fmod(2.0f*M_PI*freq/Fs*sample, 2.0f*M_PI);
+        waveBuffer[sample] = amp * (0<x && x<M_PI ? 1.0f: -1.0f);
+    }
+    PropertySetting_figure->setDataset(waveBuffer, bufferSize, 1, Colours::cyan);
+
     delete[] waveBuffer;
 }
 
@@ -884,10 +856,10 @@ BEGIN_JUCER_METADATA
     <TEXT pos="148 276 27 30" fill="solid: ffffffff" hasStroke="0" text="to"
           fontname="Default font" fontsize="15.0" kerning="0.0" bold="0"
           italic="0" justification="36"/>
-    <TEXT pos="39 100 81 26" fill="solid: ffffffff" hasStroke="0" text="Amplitude"
+    <TEXT pos="39 60 81 26" fill="solid: ffffffff" hasStroke="0" text="Amplitude"
           fontname="Default font" fontsize="15.0" kerning="0.0" bold="0"
           italic="0" justification="36"/>
-    <TEXT pos="132 100 84 26" fill="solid: ffffffff" hasStroke="0" text="Frequency"
+    <TEXT pos="132 60 84 26" fill="solid: ffffffff" hasStroke="0" text="Frequency"
           fontname="Default font" fontsize="15.0" kerning="0.0" bold="0"
           italic="0" justification="36"/>
     <TEXT pos="28 20 380 30" fill="solid: ffffffff" hasStroke="0" text="Graph Property Settings Demo"
@@ -942,7 +914,7 @@ BEGIN_JUCER_METADATA
     <TEXT pos="44 420 252 30" fill="solid: ffffffff" hasStroke="0" text="Real-time Plot Demo"
           fontname="Default font" fontsize="26.0" kerning="0.0" bold="1"
           italic="0" justification="33" typefaceStyle="Bold"/>
-    <TEXT pos="188 164 36 36" fill="solid: ffffffff" hasStroke="0" text="Hz"
+    <TEXT pos="188 148 36 36" fill="solid: ffffffff" hasStroke="0" text="Hz"
           fontname="Default font" fontsize="15.0" kerning="0.0" bold="0"
           italic="0" justification="36"/>
   </BACKGROUND>
@@ -966,15 +938,11 @@ BEGIN_JUCER_METADATA
                     virtualName="" explicitFocusOrder="0" pos="440 40 512 328" class="Figure"
                     params=""/>
   <SLIDER name="amplitude_slider" id="ff7cc6f6cc561f98" memberName="amplitude_slider"
-          virtualName="" explicitFocusOrder="0" pos="39 120 81 72" rotarysliderfill="ff29667e"
+          virtualName="" explicitFocusOrder="0" pos="39 88 81 88" rotarysliderfill="ff29667e"
           rotaryslideroutline="ff495e68" min="0.1" max="1.0" int="0.1"
           style="RotaryHorizontalVerticalDrag" textBoxPos="TextBoxBelow"
           textBoxEditable="1" textBoxWidth="80" textBoxHeight="20" skewFactor="1.0"
           needsCallback="1"/>
-  <COMBOBOX name="WaveForm_comboBox" id="27264d42774e190c" memberName="WaveForm_comboBox"
-            virtualName="" explicitFocusOrder="0" pos="40 64 176 24" editable="0"
-            layout="33" items="sine&#10;cosine&#10;triangle&#10;square" textWhenNonSelected="Select wave form"
-            textWhenNoItems=""/>
   <TEXTEDITOR name="XLabel_textEditor" id="e27c0ac7c91370c6" memberName="XLabel_textEditor"
               virtualName="" explicitFocusOrder="0" pos="104 310 112 24" initialText="Sample"
               multiline="0" retKeyStartsLine="0" readonly="0" scrollbars="1"
@@ -1018,7 +986,7 @@ BEGIN_JUCER_METADATA
   <GENERICCOMPONENT name="" id="a74a3abef4b0e258" memberName="freqAxis_figure" virtualName=""
                     explicitFocusOrder="0" pos="512 464 440 224" class="Figure" params=""/>
   <SLIDER name="freq_slider" id="bb03a2ac908aad6" memberName="freq_slider"
-          virtualName="" explicitFocusOrder="0" pos="136 120 81 72" rotarysliderfill="ff29667e"
+          virtualName="" explicitFocusOrder="0" pos="136 88 81 88" rotarysliderfill="ff29667e"
           rotaryslideroutline="ff495e68" min="20.0" max="15000.0" int="1.0"
           style="RotaryHorizontalVerticalDrag" textBoxPos="TextBoxBelow"
           textBoxEditable="1" textBoxWidth="80" textBoxHeight="20" skewFactor="1.0"

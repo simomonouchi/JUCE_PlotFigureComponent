@@ -38,7 +38,6 @@ class GUIMain  : public juce::Component,
                  private Timer,
                  public juce::TextEditor::Listener,
                  public juce::Slider::Listener,
-                 public juce::ComboBox::Listener,
                  public juce::Button::Listener
 {
 public:
@@ -63,14 +62,13 @@ public:
     void paint (juce::Graphics& g) override;
     void resized() override;
     void sliderValueChanged (juce::Slider* sliderThatWasMoved) override;
-    void comboBoxChanged (juce::ComboBox* comboBoxThatHasChanged) override;
     void buttonClicked (juce::Button* buttonThatWasClicked) override;
 
 
 
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
-    void drawWave();
+    void drawWaves();
 
     int micDatasetIndex_;
 
@@ -89,7 +87,6 @@ private:
     std::unique_ptr<juce::TextEditor> yMax_textEditor;
     std::unique_ptr<Figure> PropertySetting_figure;
     std::unique_ptr<juce::Slider> amplitude_slider;
-    std::unique_ptr<juce::ComboBox> WaveForm_comboBox;
     std::unique_ptr<juce::TextEditor> XLabel_textEditor;
     std::unique_ptr<juce::TextEditor> YLabel_textEditor;
     std::unique_ptr<juce::TextEditor> top_textEditor;
