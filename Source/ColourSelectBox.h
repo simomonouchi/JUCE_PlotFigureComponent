@@ -7,12 +7,12 @@
 
 #pragma once
 
-class Selector :
+class ColourSelectBox :
     public juce::Component,
     public juce::ChangeListener
 {
 public:
-    Selector(const juce::Colour& colour) :
+    ColourSelectBox(const juce::Colour& colour) :
         selector(juce::ColourSelector::showColourspace | juce::ColourSelector::showAlphaChannel, 0, 0)
     {
         selector.setCurrentColour(colour);
