@@ -5,5 +5,5 @@
 # Requirements
 - MacOS 10.15.6
 - Xcode 12.1
-- JUCE 6｡0｡4
+- JUCE 6.0.4
 
