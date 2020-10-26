@@ -7,7 +7,7 @@
   the "//[xyz]" and "//[/xyz]" sections will be retained when the file is loaded
   and re-saved.
 
-  Created with Projucer version: 6.0.1
+  Created with Projucer version: 6.0.4
 
   ------------------------------------------------------------------------------
 
@@ -25,6 +25,9 @@
 
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
+#ifndef M_PI
+#define M_PI 3.14159265358979323846264338327950288
+#endif
 //[/MiscUserDefs]
 
 //==============================================================================
@@ -254,7 +257,7 @@ GUIMain::GUIMain ()
     timeAxis_figure->creatreAddableDataSet(32768, micDatasetIndex_);
 
     freqAxis_figure->setPadding(Figure::Padding{40, 20, 20, 30});
-    freqAxis_figure->setXRange(Range<float>(0, 24000));
+    freqAxis_figure->setXRange(Range<float>(10, 24000));
     freqAxis_figure->setYRange(Range<float>(-120, 0));
     freqAxis_figure->setXScale(Figure::Scale::log);
 
@@ -646,7 +649,7 @@ void GUIMain::buttonClicked (juce::Button* buttonThatWasClicked)
 
 
         CallOutBox::launchAsynchronously(std::move(colourSelector), buckgroundColour_button->getScreenBounds(),nullptr);
-       //[/UserButtonCode_buckgroundColour_button]
+        //[/UserButtonCode_buckgroundColour_button]
     }
     else if (buttonThatWasClicked == plotAriaColour_button.get())
     {

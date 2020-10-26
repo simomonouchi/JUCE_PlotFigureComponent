@@ -7,7 +7,7 @@
   the "//[xyz]" and "//[/xyz]" sections will be retained when the file is loaded
   and re-saved.
 
-  Created with Projucer version: 6.0.1
+  Created with Projucer version: 6.0.4
 
   ------------------------------------------------------------------------------
 
@@ -79,7 +79,7 @@ private:
     int fifoIndex_ = 0;
 
     int Fs = 48000;
-    
+
     std::unique_ptr<ColourSelectBox> colourSelector;
     //[/UserVariables]
 

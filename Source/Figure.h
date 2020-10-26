@@ -261,6 +261,9 @@ private:
     PlotDataset* plotdattaset[10];
     int numUsingPlotDataSet=0;
     
+    float xWidth_;
+    float yWidth_;
+    
     //==============================================================================
     /* [inner class] Plotter (plot data component) */
     class Plotter : public Component
