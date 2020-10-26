@@ -60,7 +60,6 @@ PlotDataset::~PlotDataset()
 
 void PlotDataset::updateDataset(float* x, float* y, int len)
 {
-    if(x_ != NULL){
     if(len == len_){
         memcpy(x_.get(), x, sizeof(float)*len);
         memcpy(y_.get(), y, sizeof(float)*len);
@@ -72,7 +71,6 @@ void PlotDataset::updateDataset(float* x, float* y, int len)
 
         memcpy(x_.get(), x, sizeof(float)*len);
         memcpy(y_.get(), y, sizeof(float)*len);
-    }
     }
 }
 void PlotDataset::updateDataset(float* y, int len)
@@ -111,6 +109,17 @@ void PlotDataset::addData(float* x, float* y, int len)
 }
 
 //===============================================================================
+Figure::Figure()
+{
+    plotter.reset(new Plotter(*this));
+    addAndMakeVisible(plotter.get());
+    
+    for(int i=0;i<10;i++)
+    {
+        plotdattaset[i] = nullptr;
+    }
+    
+}
 
 void Figure::setPlotAriaBounds() noexcept
 {

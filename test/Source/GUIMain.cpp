@@ -19,7 +19,6 @@
 
 //[Headers] You can add your own extra header files here...
 #include "Figure.h"
-#include "ColourSelectBox.h"
 //[/Headers]
 
 #include "GUIMain.h"
@@ -633,7 +632,7 @@ void GUIMain::buttonClicked (juce::Button* buttonThatWasClicked)
     if (buttonThatWasClicked == buckgroundColour_button.get())
     {
         //[UserButtonCode_buckgroundColour_button] -- add your button handler code here..
-        auto* colourSelector = new ColourSelectBox(PropertySetting_figure->getBackgroundColour());
+        colourSelector.reset(new ColourSelectBox(PropertySetting_figure->getBackgroundColour()));
 
         colourSelector->onChange = [&](auto& c){
             PropertySetting_figure->setBackgroundColour(c);
@@ -645,13 +644,14 @@ void GUIMain::buttonClicked (juce::Button* buttonThatWasClicked)
 
         };
 
-        CallOutBox::launchAsynchronously (colourSelector, buckgroundColour_button->getScreenBounds(), nullptr);
-        //[/UserButtonCode_buckgroundColour_button]
+
+        CallOutBox::launchAsynchronously(std::move(colourSelector), buckgroundColour_button->getScreenBounds(),nullptr);
+       //[/UserButtonCode_buckgroundColour_button]
     }
     else if (buttonThatWasClicked == plotAriaColour_button.get())
     {
         //[UserButtonCode_plotAriaColour_button] -- add your button handler code here..
-        auto* colourSelector = new ColourSelectBox(PropertySetting_figure->getPlotAriaColour());
+        colourSelector.reset(new ColourSelectBox(PropertySetting_figure->getPlotAriaColour()));
 
         colourSelector->onChange = [&](auto& c){
             PropertySetting_figure->setPlotAriaColour(c);
@@ -662,14 +662,15 @@ void GUIMain::buttonClicked (juce::Button* buttonThatWasClicked)
             plotAriaColour_button->setButtonText(ss.str());
         };
 
-        CallOutBox::launchAsynchronously (colourSelector, plotAriaColour_button->getScreenBounds(), nullptr);
+        CallOutBox::launchAsynchronously (std::move(colourSelector),
+                                           plotAriaColour_button->getScreenBounds(), nullptr);
         //[/UserButtonCode_plotAriaColour_button]
     }
     else if (buttonThatWasClicked == gridColour_button.get())
     {
         //[UserButtonCode_gridColour_button] -- add your button handler code here..
 
-        auto* colourSelector = new ColourSelectBox(PropertySetting_figure->getGridColour());
+        colourSelector.reset(new ColourSelectBox(PropertySetting_figure->getGridColour()));
 
         colourSelector->onChange = [&](auto& c){
             PropertySetting_figure->setGridColour(c);
@@ -680,13 +681,13 @@ void GUIMain::buttonClicked (juce::Button* buttonThatWasClicked)
             gridColour_button->setButtonText(ss.str());
         };
 
-        CallOutBox::launchAsynchronously (colourSelector, gridColour_button->getScreenBounds(), nullptr);
+        CallOutBox::launchAsynchronously (std::move(colourSelector), gridColour_button->getScreenBounds(), nullptr);
         //[/UserButtonCode_gridColour_button]
     }
     else if (buttonThatWasClicked == fontColour_button.get())
     {
         //[UserButtonCode_fontColour_button] -- add your button handler code here..
-        auto* colourSelector = new ColourSelectBox(PropertySetting_figure->getFontColour());
+        colourSelector.reset(new ColourSelectBox(PropertySetting_figure->getFontColour()));
 
         colourSelector->onChange = [&](auto& c){
             PropertySetting_figure->setFontColour(c);
@@ -697,7 +698,7 @@ void GUIMain::buttonClicked (juce::Button* buttonThatWasClicked)
             fontColour_button->setButtonText(ss.str());
         };
 
-        CallOutBox::launchAsynchronously (colourSelector, fontColour_button->getScreenBounds(), nullptr);
+        CallOutBox::launchAsynchronously (std::move(colourSelector), fontColour_button->getScreenBounds(), nullptr);
         //[/UserButtonCode_fontColour_button]
     }
 
