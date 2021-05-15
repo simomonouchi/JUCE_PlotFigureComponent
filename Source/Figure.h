@@ -116,6 +116,9 @@ public:
         paddingBottom_ = bottom;
         setPlotAriaBounds();
     }
+    inline void setMaxBufferingSize(int maxBufferingSize) noexcept {
+        maxBufferingSize_ = maxBufferingSize;
+    }
 
     
     /* Getter */
@@ -147,11 +150,11 @@ private:
     float fontSize_ = 15.0f;
     Range<float> XRange;
     Range<float> YRange;
-    float xMin_ = 0.0f;
-    float xMax_ = 512.0f;
+    float xMin_ = 1.0f;
+    float xMax_ = 32768.0f;
     float yMin_ = -1.0f;
     float yMax_ = 1.0f;
-    int datasetMaxSize_ = 32768;
+    int maxBufferingSize_ = 32768;
     bool autoSettingXAxisRange_ = true;
     bool autoSettingYAxisRange_ = true;
     

@@ -51,6 +51,14 @@ public:
     void addGraph2Data(float sample);
     void update();
     void timerCallback() override;
+
+    void textEditorReturnKeyPressed (juce::TextEditor& textEditorThatWasReturnKeyPressed) override;
+    
+    enum
+    {
+        fftOrder = 10,
+        fftSize  = 1 << fftOrder
+    };
     //[/UserMethods]
 
     void paint (juce::Graphics& g) override;
@@ -64,6 +72,10 @@ public:
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
     int plotIdx_;
+    std::unique_ptr<dsp::FFT> forwardFFT;
+    float fifo [fftSize] = {};
+    float fftData [2 * fftSize];
+    int fifoIndex = 0;
     //[/UserVariables]
 
     //==============================================================================
@@ -86,7 +98,6 @@ private:
     std::unique_ptr<juce::TextButton> GridColour_button;
     std::unique_ptr<juce::TextButton> fontColour_button;
     std::unique_ptr<Figure> timeAxis_figure;
-    std::unique_ptr<juce::TextEditor> maxBufferingSize_button;
     std::unique_ptr<Figure> freqAxis_figure;
 
 

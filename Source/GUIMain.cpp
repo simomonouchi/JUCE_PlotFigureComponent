@@ -233,22 +233,6 @@ GUIMain::GUIMain ()
 
     timeAxis_figure->setBounds (48, 464, 440, 224);
 
-    maxBufferingSize_button.reset (new juce::TextEditor ("maxBufferingSize_button"));
-    addAndMakeVisible (maxBufferingSize_button.get());
-    maxBufferingSize_button->setMultiLine (false);
-    maxBufferingSize_button->setReturnKeyStartsNewLine (false);
-    maxBufferingSize_button->setReadOnly (false);
-    maxBufferingSize_button->setScrollbarsShown (true);
-    maxBufferingSize_button->setCaretVisible (true);
-    maxBufferingSize_button->setPopupMenuEnabled (true);
-    maxBufferingSize_button->setColour (juce::TextEditor::backgroundColourId, juce::Colour (0xff201f22));
-    maxBufferingSize_button->setColour (juce::TextEditor::outlineColourId, juce::Colour (0x00000000));
-    maxBufferingSize_button->setColour (juce::TextEditor::shadowColourId, juce::Colour (0x00000000));
-    maxBufferingSize_button->setColour (juce::CaretComponent::caretColourId, juce::Colour (0xff959595));
-    maxBufferingSize_button->setText (TRANS("32768"));
-
-    maxBufferingSize_button->setBounds (440, 424, 72, 24);
-
     freqAxis_figure.reset (new Figure());
     addAndMakeVisible (freqAxis_figure.get());
 
@@ -266,6 +250,8 @@ GUIMain::GUIMain ()
     bottom_textEditor->addListener(this);
     Left_textEditor->addListener(this);
     Right_textEditor->addListener(this);
+    
+    forwardFFT.reset (new dsp::FFT(fftOrder));
 
     PropertySetting_figure->setXLabel("X axis");
     PropertySetting_figure->setYLabel("Y axis");
@@ -289,9 +275,11 @@ GUIMain::GUIMain ()
 
     freqAxis_figure->setFontSize(10.0f);
     freqAxis_figure->setPadding(25, 0, 0, 12);
+    freqAxis_figure->setXLim(0, fftSize/2);
+    freqAxis_figure->setYLim(-80, 10);
     //[/UserPreSize]
 
-    setSize (1000, 900);
+    setSize (1000, 800);
 
 
     //[Constructor] You can add your own custom stuff here..
@@ -325,11 +313,11 @@ GUIMain::~GUIMain()
     GridColour_button = nullptr;
     fontColour_button = nullptr;
     timeAxis_figure = nullptr;
-    maxBufferingSize_button = nullptr;
     freqAxis_figure = nullptr;
 
 
     //[Destructor]. You can add your own custom destruction code here..
+    forwardFFT = nullptr;
     //[/Destructor]
 }
 
@@ -591,7 +579,7 @@ void GUIMain::paint (juce::Graphics& g)
     }
 
     {
-        int x = 16, y = 412, width = 960, height = 300;
+        int x = 16, y = 412, width = 960, height = 316;
         juce::Colour fillColour = juce::Colour (0xff0e174a);
         //[UserPaintCustomArguments] Customize the painting arguments here..
         //[/UserPaintCustomArguments]
@@ -607,18 +595,6 @@ void GUIMain::paint (juce::Graphics& g)
         //[/UserPaintCustomArguments]
         g.setColour (fillColour);
         g.setFont (juce::Font (26.00f, juce::Font::plain).withTypefaceStyle ("Bold"));
-        g.drawText (text, x, y, width, height,
-                    juce::Justification::centredLeft, true);
-    }
-
-    {
-        int x = 316, y = 420, width = 116, height = 30;
-        juce::String text (TRANS("Max Buffering size"));
-        juce::Colour fillColour = juce::Colours::white;
-        //[UserPaintCustomArguments] Customize the painting arguments here..
-        //[/UserPaintCustomArguments]
-        g.setColour (fillColour);
-        g.setFont (juce::Font (15.00f, juce::Font::plain).withTypefaceStyle ("Regular"));
         g.drawText (text, x, y, width, height,
                     juce::Justification::centredLeft, true);
     }
@@ -719,9 +695,58 @@ void GUIMain::buttonClicked (juce::Button* buttonThatWasClicked)
 
 
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
+void GUIMain::textEditorReturnKeyPressed (juce::TextEditor& textEditorThatWasReturnKeyPressed)
+{
+    String Value = textEditorThatWasReturnKeyPressed.getText();
+
+    if (&textEditorThatWasReturnKeyPressed == xMin_textEditor.get())
+    {
+
+    }
+    else if (&textEditorThatWasReturnKeyPressed == xMax_textEditor.get())
+    {
+
+    }
+    else if (&textEditorThatWasReturnKeyPressed == yMin_textEditor.get())
+    {
+
+    }
+    else if (&textEditorThatWasReturnKeyPressed == yMax_textEditor.get())
+    {
+
+    }
+    else if (&textEditorThatWasReturnKeyPressed == XLabel_textEditor.get())
+    {
+
+    }
+    else if (&textEditorThatWasReturnKeyPressed == YLabel_textEditor.get())
+    {
+
+    }
+    else if (&textEditorThatWasReturnKeyPressed == top_textEditor.get())
+    {
+
+    }
+    else if (&textEditorThatWasReturnKeyPressed == bottom_textEditor.get())
+    {
+
+    }
+    else if (&textEditorThatWasReturnKeyPressed == Left_textEditor.get())
+    {
+
+    }
+    else if (&textEditorThatWasReturnKeyPressed == Right_textEditor.get())
+    {
+
+    }
+}
+
 void GUIMain::addGraph2Data(float sample)
 {
     timeAxis_figure->addPoint(sample, plotIdx_);
+    
+    fifo[fifoIndex] = sample;
+    fifoIndex = (fifoIndex+1)%fftSize;
 }
 
 void GUIMain::update()
@@ -731,6 +756,16 @@ void GUIMain::update()
 
 void GUIMain::timerCallback()
 {
+    memcpy (fftData, fifo, sizeof (fifo));
+    forwardFFT->performFrequencyOnlyForwardTransform (fftData);
+    for(int i=0;i<fftSize/2;i++)
+    {
+        fftData[i] = 20*log10(fftData[i]);
+    }
+    
+    freqAxis_figure->clear();
+    freqAxis_figure->addDataSet(fftData, fftSize/2);
+    
     repaint();
 }
 //[/MiscUserCode]
@@ -749,7 +784,7 @@ BEGIN_JUCER_METADATA
                  parentClasses="public juce::Component, private Timer, public juce::TextEditor::Listener"
                  constructorParams="" variableInitialisers="" snapPixels="8" snapActive="1"
                  snapShown="1" overlayOpacity="0.330" fixedSize="0" initialWidth="1000"
-                 initialHeight="900">
+                 initialHeight="800">
   <BACKGROUND backgroundColour="ff323e44">
     <RECT pos="16 12 960 380" fill="solid: ff182d0e" hasStroke="0"/>
     <TEXT pos="140 244 27 28" fill="solid: ffffffff" hasStroke="0" text="to"
@@ -812,13 +847,10 @@ BEGIN_JUCER_METADATA
     <TEXT pos="236 148 80 28" fill="solid: ffffffff" hasStroke="0" text="Grid"
           fontname="Default font" fontsize="15.0" kerning="0.0" bold="0"
           italic="0" justification="34"/>
-    <RECT pos="16 412 960 300" fill="solid: ff0e174a" hasStroke="0"/>
+    <RECT pos="16 412 960 316" fill="solid: ff0e174a" hasStroke="0"/>
     <TEXT pos="44 420 252 30" fill="solid: ffffffff" hasStroke="0" text="Realtime Plot Demo"
           fontname="Default font" fontsize="26.0" kerning="0.0" bold="1"
           italic="0" justification="33" typefaceStyle="Bold"/>
-    <TEXT pos="316 420 116 30" fill="solid: ffffffff" hasStroke="0" text="Max Buffering size"
-          fontname="Default font" fontsize="15.0" kerning="0.0" bold="0"
-          italic="0" justification="33"/>
     <TEXT pos="162 167 36 30" fill="solid: ffffffff" hasStroke="0" text="Hz"
           fontname="Default font" fontsize="15.0" kerning="0.0" bold="0"
           italic="0" justification="36"/>
@@ -896,11 +928,6 @@ BEGIN_JUCER_METADATA
               needsCallback="1" radioGroupId="0"/>
   <GENERICCOMPONENT name="" id="3b2d7d4faa8bc38f" memberName="timeAxis_figure" virtualName=""
                     explicitFocusOrder="0" pos="48 464 440 224" class="Figure" params=""/>
-  <TEXTEDITOR name="maxBufferingSize_button" id="961bfa50b775e8c9" memberName="maxBufferingSize_button"
-              virtualName="" explicitFocusOrder="0" pos="440 424 72 24" bkgcol="ff201f22"
-              outlinecol="0" shadowcol="0" caretcol="ff959595" initialText="32768"
-              multiline="0" retKeyStartsLine="0" readonly="0" scrollbars="1"
-              caret="1" popupmenu="1"/>
   <GENERICCOMPONENT name="" id="a74a3abef4b0e258" memberName="freqAxis_figure" virtualName=""
                     explicitFocusOrder="0" pos="512 464 440 224" class="Figure" params=""/>
 </JUCER_COMPONENT>

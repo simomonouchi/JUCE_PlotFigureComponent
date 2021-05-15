@@ -32,12 +32,11 @@ PlotDataset::PlotDataset(float* y, int len)
 
 PlotDataset::PlotDataset()
 {
-    
 }
 
 void PlotDataset::add(float y)
 {
-    float x = 0;
+    float x = 1;
     if (points.size()){
         int index = points.size()-1;
         const LinkedListPointer<PlotPoints>& ope = points.operator[](index);
@@ -112,7 +111,7 @@ void Figure::addPoint(float y, int idx)
     LinkedListPointer<PlotDataset>& ope = plotData_.operator[](idx-1);
     PlotDataset* dataset = ope.get();
     
-    if(dataset->points.size() > datasetMaxSize_)
+    if(dataset->points.size() > maxBufferingSize_)
     {
         PlotDataset::PlotPoints* point = dataset->points.get();
         dataset->points.remove(point);
