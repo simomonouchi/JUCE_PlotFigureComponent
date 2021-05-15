@@ -62,11 +62,7 @@ private:
 class Figure : public juce::Component, private Timer
 {
 public:
-    Figure()
-    {
-        plotter.reset(new Plotter(*this));
-        addAndMakeVisible(plotter.get());
-    }
+    Figure();
     ~Figure() override;
 
 //==============================================================================
@@ -265,6 +261,9 @@ private:
     PlotDataset* plotdattaset[10];
     int numUsingPlotDataSet=0;
     
+    float xWidth_;
+    float yWidth_;
+    
     //==============================================================================
     /* [inner class] Plotter (plot data component) */
     class Plotter : public Component
@@ -279,7 +278,7 @@ private:
         Figure& figure_;
     };
     
-    std::unique_ptr<Plotter> plotter;
+    std::unique_ptr<Plotter> plotter = nullptr;
     
     //==============================================================================
     /* [inner class] AxesDrawer */
@@ -311,7 +310,7 @@ private:
         std::unique_ptr<float> yAxisTickLabel_;
     };
     
-    AxesDrawer* axisDrawer_;
+    AxesDrawer* axisDrawer_ = nullptr;
     
      //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Figure)

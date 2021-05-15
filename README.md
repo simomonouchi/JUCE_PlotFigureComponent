@@ -1,4 +1,9 @@
 # JUCE_GraphComponent
 
-![GraphComponentImage](https://user-images.githubusercontent.com/41986704/94370046-6cc37300-0128-11eb-8416-4340cc1f643e.gif)
+![GraphComponentImage](https://user-images.githubusercontent.com/41986704/95024047-a01f7800-06bb-11eb-9b13-2c24bcdfc87e.gif)
+
+# Requirements
+- MacOS 10.15.6
+- Xcode 12.1
+- JUCE 6.0.4
 
