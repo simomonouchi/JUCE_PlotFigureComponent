@@ -10,49 +10,107 @@
 
 #include "Figure.h"
 
+
+
 PlotDataset::PlotDataset(float* x, float* y, int len)
+ : len_(len)
 {
-    for(int sample = 0; sample<len;sample++){
-        points.append( new PlotPoints{x[sample], y[sample]});
-    }
+    x_.reset(new float[len]);
+    y_.reset(new float[len]);
+
+    memcpy(x_.get(), x, sizeof(float)*len);
+    memcpy(y_.get(), y, sizeof(float)*len);
+    
+    addable_ = false;
 }
 
 
 PlotDataset::PlotDataset(float* y, int len)
+: len_(len)
 {
-    for(int sample = 0; sample<len;sample++){
-        points.append( new PlotPoints{static_cast<float>(sample), y[sample]});
-    }
-}
-
-PlotDataset::PlotDataset()
-{
-}
-
-void PlotDataset::add(float y)
-{
-    float x = 1;
-    if (points.size()){
-        int index = points.size()-1;
-        const LinkedListPointer<PlotPoints>& ope = points.operator[](index);
-        
-        PlotPoints* lastPoint = ope.get();
-        x = lastPoint->x + 1;
-    }
+    x_.reset(new float[len]);
+    y_.reset(new float[len]);
     
-    points.append( new PlotPoints{x, y});
+    /* add natural number */
+    for(int i = 0; i<len; i++){
+        x_.get()[i] = i+1;
+    }
+    memcpy(y_.get(), y, sizeof(float)*len);
+
+    addable_ = false;
 }
 
-void PlotDataset::add(float x, float y)
+PlotDataset::PlotDataset(int maxLen)
+: len_(maxLen)
 {
-    points.append( new PlotPoints{x, y});
+    x_.reset(new float[maxLen]);
+    y_.reset(new float[maxLen]);
+    
+    memset(x_.get(), 0, sizeof(float)*maxLen);
+    memset(y_.get(), 0, sizeof(float)*maxLen);
+    
+    addable_ = true;
 }
-
 
 PlotDataset::~PlotDataset()
 {
-    points.deleteAll();
+    x_ = nullptr;
+    y_ = nullptr;
 }
+
+void PlotDataset::updateDataset(float* x, float* y, int len)
+{
+    if(x_ != NULL){
+    if(len == len_){
+        memcpy(x_.get(), x, sizeof(float)*len);
+        memcpy(y_.get(), y, sizeof(float)*len);
+    }
+    else
+    {
+        x_.reset(new float[len]);
+        y_.reset(new float[len]);
+
+        memcpy(x_.get(), x, sizeof(float)*len);
+        memcpy(y_.get(), y, sizeof(float)*len);
+    }
+    }
+}
+void PlotDataset::updateDataset(float* y, int len)
+{
+    if(len == len_){
+        memcpy(y_.get(), y, sizeof(float)*len);
+    }
+    else
+    {
+        x_.reset(new float[len]);
+        y_.reset(new float[len]);
+
+        /* add natural number */
+        for(int i = 0; i<len; i++){
+            x_.get()[i] = i+1;
+        }
+        memcpy(y_.get(), y, sizeof(float)*len);
+    }
+}
+
+void PlotDataset::addData(float* y, int len)
+{
+    for(int i=0; i<len; i++){
+        y_.get()[additionPoint_] = y[i];
+        additionPoint_ = (additionPoint_+1)%len_;
+    }
+}
+
+void PlotDataset::addData(float* x, float* y, int len)
+{
+    for(int i=0; i<len; i++){
+        x_.get()[additionPoint_] = x[i];
+        y_.get()[additionPoint_] = y[i];
+        additionPoint_ = (additionPoint_+1)%len_;
+    }
+}
+
+//===============================================================================
 
 void Figure::setPlotAriaBounds() noexcept
 {
@@ -62,70 +120,92 @@ void Figure::setPlotAriaBounds() noexcept
             getWidth() - padding_.right - padding_.left,
             getHeight() - padding_.bottom - padding_.top
      );
+    
+    plotter->setBounds(plotAria_);
+    
+    axesSetUp();
 }
 
 Figure::~Figure()
 {
-    plotData_.deleteAll();
     delete axisDrawer_;
-}
-
-void Figure::addDataSet(float* y, int len)
-{
-    plotData_.append(new PlotDataset(y, len));
-}
-
-void Figure::addDataSet(float* x, float* y, int len)
-{
-     plotData_.append(new PlotDataset(x, y, len));
-}
-
-int Figure::creatreDataSet(){
-    plotData_.append(new PlotDataset());
-    return plotData_.size();
-}
-
-void Figure::addPoint(float y, int idx)
-{
-    LinkedListPointer<PlotDataset>& ope = plotData_.operator[](idx-1);
-    PlotDataset* dataset = ope.get();
     
-    if(dataset->points.size() > maxBufferingSize_)
+    for(int i=0; i<numUsingPlotDataSet; i++)
     {
-        PlotDataset::PlotPoints* point = dataset->points.get();
-        dataset->points.remove(point);
-        delete point;
-        
-        /* shift x range */
-        XRange_ = Range<float>(XRange_.getStart()+1, XRange_.getEnd()+1);
+        delete plotdattaset[i];
     }
-    
-    dataset->add(y);
-    
 }
 
-void Figure::addPoint(float x, float y, int idx)
+void Figure::setDataset(float* y, int len, int datasetIndex, Colour lineColour)
 {
-    LinkedListPointer<PlotDataset>& ope = plotData_.operator[](idx-1);
-    PlotDataset* dataset = ope.get();
-    dataset->add(x, y);
+    if(plotdattaset[datasetIndex] == nullptr)
+    {
+        plotdattaset[datasetIndex] = new PlotDataset(y, len);
+        plotdattaset[datasetIndex]->setLineColour(lineColour);
+        numUsingPlotDataSet++;
+    }
+    else
+    {
+        plotdattaset[datasetIndex]->updateDataset(y, len);
+    }
+    repaint();
 }
 
-void Figure::clear()
+void Figure::setDataset(float* x, float* y, int len, int datasetIndex, Colour lineColour)
 {
-    plotData_.deleteAll();
+    if(plotdattaset[datasetIndex] == nullptr)
+    {
+        plotdattaset[datasetIndex] = new PlotDataset(x, y, len);
+        plotdattaset[datasetIndex]->setLineColour(lineColour);
+        numUsingPlotDataSet++;
+    }
+    else
+    {
+        plotdattaset[datasetIndex]->updateDataset(x, y, len);
+    }
+    repaint();
+}
+
+void Figure::creatreAddableDataSet(int maxLen, int datasetIndex) {
+    plotdattaset[numUsingPlotDataSet] = new PlotDataset(maxLen);
+    numUsingPlotDataSet++;
+    startTimerHz (30);
+}
+
+void Figure::addData(float* y, int len, int datasetIndex)
+{
+    jassert(plotdattaset[datasetIndex]->isAddable());
+    
+    plotdattaset[datasetIndex]->addData(y, len);
+}
+
+void Figure::addPoint(float* x, float* y, int len, int datasetIndex)
+{
+    jassert(plotdattaset[datasetIndex]->isAddable());
+    
+    plotdattaset[datasetIndex]->addData(x, y, len);
+}
+
+void Figure::timerCallback()
+{
+    repaint();
 }
 
 void Figure::axesSetUp()
 {
-    axisDrawer_ = new AxesDrawer(*this);
+    if(axisDrawer_ == nullptr){
+        axisDrawer_ = new AxesDrawer(*this);
+    }
+    else
+    {
+        axisDrawer_->calcAxesPosition();
+    }
 }
 
 void Figure::paint (juce::Graphics& g)
 {
     if(PropertyChanged_){
         setPlotAriaBounds();
-        axesSetUp();
         PropertyChanged_ = false;
     }
 
@@ -135,79 +215,33 @@ void Figure::paint (juce::Graphics& g)
     g.setColour(plotAriaColour_);
     g.fillRect(plotAria_);
     
-    float xLength = XRange_.getLength();
-    float yLength = YRange_.getLength();
-    float tickX = plotAria_.getWidth() / xLength;
-    float tickY = plotAria_.getHeight() / yLength;
-
-    /* draw plots */
-    {
-        PlotDataset* dataset = plotData_.get();
-        while (dataset != NULL)
-        {
-            g.setColour(dataset->getLineColour());
-            PlotDataset::PlotPoints* point = dataset->points.get();
-            bool firstFlag = true;
-            int preX;
-            int preY;
-            while (point != NULL)
-            {
-                float pointX = point->x;
-                float pointY = point->y;
-                int x = (tickX * (pointX - XRange_.getStart())) + plotAria_.getX();
-                int y = plotAria_.getHeight() - (tickY * (pointY - YRange_.getStart())) + plotAria_.getY();
-                
-                if ( (x>plotAria_.getX()) && (x<plotAria_.getRight()) &&
-                    (y>plotAria_.getY()) && (y<plotAria_.getBottom())){
-                    if(!firstFlag){
-                        g.drawLine(preX, preY, x, y, 2);
-                        
-                        if(marker_ == Marker::none)
-                        {
-                        }
-                        else if(marker_ == Marker::square)
-                        {
-                            g.fillRect(x - 2, y - 2, 4, 4);
-                        }
-                        else if (marker_ == Marker::circle)
-                        {
-                            g.fillEllipse(x - 2, y - 2, 4, 4);
-                        }
-                    }
-                    else{ // firstFlag == true
-                        firstFlag = false;
-                    }
-                    
-                    preX = x;
-                    preY = y;
-                }
-                else{ // point is out of plotAria
-                    firstFlag = true;
-//                    g.drawLine(preX, preY, x, y, 2);
-                }
-                
-                point = point->nextListItem;
-            }
-            dataset = dataset->nextListItem;
-        }
-    }
+  
+   
 
     /* draw axes */
     axisDrawer_->drawAxes(g);
     
         
     /* draw x-axis label */
-    g.drawText(xLabel_, plotAria_, Justification::centredBottom, true);
+    g.drawText(xLabel_, 0, getBottom()-(fontSize_+40), getWidth(), (fontSize_+40),
+               Justification::centredTop, true
+               );
 
     /* draw y-axis label (rotate 90 deg.)*/
     g.saveState();
     g.addTransform(AffineTransform::rotation(
         -MathConstants<float>::halfPi,
-        getX()+10,
-        getWidth()/2
+        10,
+        getHeight()/2
      ));
-    g.drawText(yLabel_, plotAria_, Justification::centredLeft, true);
+    g.drawText(yLabel_,
+               10, 0, // x, y
+               (fontSize_+40), getHeight(), // width, height
+               Justification::centred, true
+               );
     g.restoreState();
+    
+    plotter->repaint();
 }
 
 void Figure::resized()
@@ -215,84 +249,165 @@ void Figure::resized()
     
 }
 
+//================================================================
+void Figure::Plotter::paint (juce::Graphics& g)
+{
+    float tickX = getWidth() / figure_.XRange_.getLength();
+    float tickY = getHeight() / figure_.YRange_.getLength();
+
+    /* plot */
+        for(int i=0; i<figure_.numUsingPlotDataSet; i++)
+        {
+            PlotDataset* dataset = figure_.plotdattaset[i];
+            g.setColour(dataset->getLineColour());
+            int prePosX;
+            int prePosY;
+            for(int sample=0; sample < dataset->getLength(); sample++)
+            {
+                float x = dataset->getX(sample);
+                float y = dataset->getY(sample);
+            
+                int posX=0;
+                int posY=0;
+                if(figure_.xScale_ == Scale::linear){
+                    posX = (tickX * (x - figure_.XRange_.getStart()));
+                }
+                else if(figure_.xScale_ == Scale::log)
+                {
+                    float xLength = figure_.XRange_.getLength();
+                    int exp = log10(xLength);
+
+                    float frac = (xLength / pow(10, exp));
+                    int width = getWidth()/(exp+log10(frac));
+                    
+                    posX = width * log10(x - figure_.XRange_.getStart());
+                }
+                
+                if(figure_.yScale_ == Scale::linear){
+                posY = getHeight() - (tickY * (y - figure_.YRange_.getStart()));
+                }
+                else if(figure_.xScale_ == Scale::log)
+                {
+                    float yLength = figure_.YRange_.getLength();
+                    int exp = log10(yLength);
+
+                    float frac = (yLength / pow(10, exp));
+                    int width = getWidth()/(exp+log10(frac));
+                    
+                    posY = width * log10(y - figure_.YRange_.getStart());
+                }
+                
+                if(sample){
+                    g.drawLine(prePosX, prePosY, posX, posY, 2);
+                    
+                    if(figure_.marker_ == Marker::none) { }
+                    else if(figure_.marker_ == Marker::square)
+                    {
+                        g.fillRect(
+                           posX - figure_.markerSize_, posY - figure_.markerSize_,
+                                   figure_.markerSize_*2, figure_.markerSize_*2
+                        );
+                    }
+                    else if (figure_.marker_ == Marker::circle)
+                    {
+                        g.fillEllipse(
+                          posX - figure_.markerSize_, posY - figure_.markerSize_,
+                                      figure_.markerSize_*2, figure_.markerSize_*2
+                        );
+                    }
+                }
+                
+                prePosX = posX;
+                prePosY = posY;
+
+            }
+        }
+}
+//==============================================================================
+/* methods of Figure's inner class AxesDrawer */
+
 Figure::AxesDrawer::AxesDrawer(Figure& figure)
 : figure_(figure)
 {
-    
-    float xLength = figure.XRange_.getLength();
-    float yLength = figure.YRange_.getLength();
-    float tickX = figure.plotAria_.getWidth() / xLength;
-    float tickY = figure.plotAria_.getHeight() / yLength;
-    float dx = xLength / (figure.xTickRes_-1);
-    float dy = yLength / (figure.yTickRes_-1);
+   calcAxesPosition();
+}
+
+void Figure::AxesDrawer::calcAxesPosition()
+{
+    float xLength = figure_.XRange_.getLength();
+    float yLength = figure_.YRange_.getLength();
+    float tickX = figure_.plotAria_.getWidth() / xLength;
+    float tickY = figure_.plotAria_.getHeight() / yLength;
+    float dx = xLength / (figure_.xTickRes_-1);
+    float dy = yLength / (figure_.yTickRes_-1);
     
     /* X axis */
-    xGridYPos_ = Limits<int>{figure.plotAria_.getBottom(), figure.plotAria_.getY()};
-    if(figure.xScale_ == Scale::linear)
+    xGridYPos_ = Limits<int>{figure_.plotAria_.getBottom(), figure_.plotAria_.getY()};
+    if(figure_.xScale_ == Scale::linear)
     {
-        numXGridLine_ = figure.xTickRes_;
-        xGridXPos_ = new float[figure.xTickRes_];
-        xAxisTickLabel_ = new float[figure.xTickRes_];
+        numXGridLine_ = figure_.xTickRes_;
+        xGridXPos_.reset(new float[figure_.xTickRes_]);
+        xAxisTickLabel_.reset(new float[figure_.xTickRes_]);
         for (int i = 0; i < numXGridLine_; i++)
         {
-            xGridXPos_[i] = tickX*dx*i + figure.plotAria_.getX();
-            xAxisTickLabel_[i] = figure.XRange_.getStart() + (dx * i);
+            xGridXPos_.get()[i] = tickX*dx*i + figure_.plotAria_.getX();
+            xAxisTickLabel_.get()[i] = figure_.XRange_.getStart() + (dx * i);
         }
     }
-    else if(figure.xScale_ == Scale::log)
+    else if(figure_.xScale_ == Scale::log)
     {
-        float xLength = figure.XRange_.getLength();
+        float xLength = figure_.XRange_.getLength();
         int exp = log10(xLength);
 
         float frac = (xLength / pow(10, exp));
-        int width = figure.plotAria_.getWidth()/(exp+log10(frac));
+        int width = figure_.plotAria_.getWidth()/(exp+log10(frac));
         numXGridLine_ = exp*10+floor(frac);
         
-        xGridXPos_ = new float[numXGridLine_];
-        xAxisTickLabel_ = new float[exp+1];
+        xGridXPos_.reset(new float[numXGridLine_]);
+        xAxisTickLabel_.reset(new float[exp+1]);
         
-        float* tickLabel = xAxisTickLabel_;
+        float* tickLabel = xAxisTickLabel_.get();
         float pos = 0;
         for(int i=0;i<numXGridLine_;i++){
             pos += width*(LOG10_RATIO[i%10]);
-            xGridXPos_[i] = pos + figure.plotAria_.getX();
+            xGridXPos_.get()[i] = pos + figure_.plotAria_.getX();
             if(i%10==0) {
                 *tickLabel = pow(10, i/9);
                 tickLabel++;
             }
         }
-    }
+}
 
 /* Y axis */
-yGridXPos_ = Limits<int>{figure.plotAria_.getX(), figure.plotAria_.getRight()};
-if(figure.yScale_ == Scale::linear)
+yGridXPos_ = Limits<int>{figure_.plotAria_.getX(), figure_.plotAria_.getRight()};
+if(figure_.yScale_ == Scale::linear)
 {
-    numYGridLine_ = figure.yTickRes_;
-    yGridYPos_ = new float[figure.yTickRes_];
-    yAxisTickLabel_ = new float[figure.yTickRes_];
+    numYGridLine_ = figure_.yTickRes_;
+    yGridYPos_.reset(new float[figure_.yTickRes_]);
+    yAxisTickLabel_.reset(new float[figure_.yTickRes_]);
     for (int i = 0; i < numYGridLine_; i++)
     {
-        yGridYPos_[i] = tickY*dy*i + figure.plotAria_.getY();
-        yAxisTickLabel_[i] = figure.YRange_.getStart() + (dy * i);
+        yGridYPos_.get()[i] = tickY*dy*i + figure_.plotAria_.getY();
+        yAxisTickLabel_.get()[i] = figure_.YRange_.getEnd() - (dy * i);
     }
 }
-else if(figure.yScale_ == Scale::log)
+else if(figure_.yScale_ == Scale::log)
 {
-    float yLength = figure.YRange_.getLength();
+    float yLength = figure_.YRange_.getLength();
     int exp = log10(yLength);
 
     float frac = (yLength / pow(10, exp));
-    int width = figure.plotAria_.getWidth()/(exp+log10(frac));
+    int width = figure_.plotAria_.getWidth()/(exp+log10(frac));
     numYGridLine_ = exp*10+floor(frac);
     
-    yGridYPos_ = new float[numYGridLine_];
-    yAxisTickLabel_ = new float[exp+1];
+    yGridYPos_.reset(new float[numYGridLine_]);
+    yAxisTickLabel_.reset(new float[exp+1]);
     
-    float* tickLabel = yAxisTickLabel_;
+    float* tickLabel = yAxisTickLabel_.get();
     float pos = 0;
     for(int i=0;i<numYGridLine_;i++){
         pos += width*(LOG10_RATIO[i%10]);
-        yGridYPos_[i] = pos + figure.plotAria_.getBottom();
+        yGridYPos_.get()[i] = pos + figure_.plotAria_.getBottom();
         if(i%10==0) {
             *tickLabel = pow(10, i/9);
             tickLabel++;
@@ -309,13 +424,13 @@ void Figure::AxesDrawer::drawAxes (Graphics& g)
 
     /* X axis */
     {
-    float* tickLabel = xAxisTickLabel_;
+    float* tickLabel = xAxisTickLabel_.get();
     
     for(int i=0;i<numXGridLine_;i++)
     {
         g.setColour(figure_.gridColour_);
         
-        float x = xGridXPos_[i];
+        float x = xGridXPos_.get()[i];
         g.drawDashedLine(
              Line<float>(x, xGridYPos_.min, x, xGridYPos_.max),
              dashLength_,
@@ -337,13 +452,13 @@ void Figure::AxesDrawer::drawAxes (Graphics& g)
     
     /* Y axis */
     {
-    float* tickLabel = yAxisTickLabel_;
+    float* tickLabel = yAxisTickLabel_.get();
     
     for(int i=0;i<numYGridLine_;i++)
     {
         g.setColour(figure_.gridColour_);
         
-        float y = yGridYPos_[i];
+        float y = yGridYPos_.get()[i];
         g.drawDashedLine(
              Line<float>(yGridXPos_.min, y, yGridXPos_.max, y),
              dashLength_,
@@ -362,6 +477,14 @@ void Figure::AxesDrawer::drawAxes (Graphics& g)
         tickLabel++;
     }
     }
+}
+
+Figure::AxesDrawer::~AxesDrawer()
+{
+    xGridXPos_ = nullptr;
+    xAxisTickLabel_ = nullptr;
+    yGridYPos_ = nullptr;
+    yAxisTickLabel_ = nullptr;
 }
 
 

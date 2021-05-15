@@ -38,7 +38,6 @@ class GUIMain  : public juce::Component,
                  private Timer,
                  public juce::TextEditor::Listener,
                  public juce::Slider::Listener,
-                 public juce::ComboBox::Listener,
                  public juce::Button::Listener
 {
 public:
@@ -48,7 +47,7 @@ public:
 
     //==============================================================================
     //[UserMethods]     -- You can add your own custom methods in this section.
-    void addMicdata(float sample);
+    void addMicdata(float* data, int len);
     void timerCallback() override;
 
     void textEditorTextChanged (juce::TextEditor& textEditorThatWasReturnKeyPressed) override;
@@ -63,23 +62,20 @@ public:
     void paint (juce::Graphics& g) override;
     void resized() override;
     void sliderValueChanged (juce::Slider* sliderThatWasMoved) override;
-    void comboBoxChanged (juce::ComboBox* comboBoxThatHasChanged) override;
     void buttonClicked (juce::Button* buttonThatWasClicked) override;
 
 
 
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
-    void drawWave();
+    void drawWaves();
 
-    int micDataIndex_;
+    int micDatasetIndex_;
 
     std::unique_ptr<dsp::FFT> forwardFFT_;
     float fifo_ [fftSize] = {};
     float fftData_ [2 * fftSize];
     int fifoIndex_ = 0;
-
-    bool plotDataReady_=false;
 
     int Fs = 48000;
     //[/UserVariables]
@@ -91,7 +87,6 @@ private:
     std::unique_ptr<juce::TextEditor> yMax_textEditor;
     std::unique_ptr<Figure> PropertySetting_figure;
     std::unique_ptr<juce::Slider> amplitude_slider;
-    std::unique_ptr<juce::ComboBox> WaveForm_comboBox;
     std::unique_ptr<juce::TextEditor> XLabel_textEditor;
     std::unique_ptr<juce::TextEditor> YLabel_textEditor;
     std::unique_ptr<juce::TextEditor> top_textEditor;
