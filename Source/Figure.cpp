@@ -62,10 +62,10 @@ PlotDataset::~PlotDataset()
 void Figure::setPlotAriaBounds() noexcept
 {
     plotAria_.setBounds(
-            graphAria_.getX() + paddingLeft_,
-            graphAria_.getY() + paddingTop_,
-            graphAria_.getWidth() - paddingRight_ - paddingLeft_,
-            graphAria_.getHeight() - paddingBottom_ - paddingTop_
+            graphAria_.getX() + padding_.left,
+            graphAria_.getY() + padding_.top,
+            graphAria_.getWidth() - padding_.right - padding_.left,
+            graphAria_.getHeight() - padding_.bottom - padding_.top
      );
 }
 
@@ -117,9 +117,10 @@ void Figure::addPoint(float y, int idx)
         dataset->points.remove(point);
         delete point;
         
-        xMin_++;
-        xMax_++;
+        /* shift x range */
+        XRange_ = Range<float>(XRange_.getStart()+1, XRange_.getEnd()+1);
     }
+    
     dataset->add(y);
     
 }
@@ -144,88 +145,100 @@ void Figure::paint(Graphics& g)
     
     g.setColour(plotAriaColour_);
     g.fillRect(plotAria_);
-    
-    float dx = (xMax_ - xMin_) / (xScaleRes_-1);
-    float dy = (yMax_ - yMin_) / (yScaleRes_-1);
-    float scaleX = plotAria_.getWidth() / (xMax_ - xMin_);
-    float scaleY = plotAria_.getHeight() / (yMax_ - yMin_);
+    float xLength = XRange_.getLength();
+    float yLength = YRange_.getLength();
+    float dx = xLength / (xTickRes_-1);
+    float dy = yLength / (yTickRes_-1);
+    float tickX = plotAria_.getWidth() / xLength;
+    float scaleY = plotAria_.getHeight() / yLength;
 
-    // draw points
+    /* draw plots */
     {
         PlotDataset* dataset = plotData_.get();
         while (dataset != NULL)
         {
             g.setColour(dataset->getLineColour());
             PlotDataset::PlotPoints* point = dataset->points.get();
-            bool notFirstFlag = false;
+            bool firstFlag = true;
             int preX;
             int preY;
             while (point != NULL)
             {
-                int x = (scaleX * (point->x - xMin_)) + plotAria_.getX();
-                int y = plotAria_.getHeight() - (scaleY * (point->y - yMin_)) + plotAria_.getY();
-                if(notFirstFlag){
-                    g.drawLine(preX, preY, x, y, 2);
-                    if(marker_ == Markers::none)
-                    {
-                    }
-                    else if(marker_ == Markers::square)
-                    {
-                        g.fillRect(x - 2, y - 2, 5, 5);
-                    }
-                    else if (marker_ == Markers::circle)
-                    {
-                        g.fillEllipse(x - 2, y - 2, 5, 5);
-                    }
-                }
-                else{
-                    notFirstFlag = true;
-                }
-
+                float pointX = point->x;
+                float pointY = point->y;
+                int x = (tickX * (pointX - XRange_.getStart())) + plotAria_.getX();
+                int y = plotAria_.getHeight() - (scaleY * (pointY - YRange_.getStart())) + plotAria_.getY();
                 
-                
-                preX = x;
-                preY = y;
+                if ( (x>plotAria_.getX()) && (x<plotAria_.getRight()) &&
+                    (y>plotAria_.getY()) && (y<plotAria_.getBottom())){
+                    if(!firstFlag){
+                        g.drawLine(preX, preY, x, y, 2);
+                        
+                        if(marker_ == Markers::none)
+                        {
+                        }
+                        else if(marker_ == Markers::square)
+                        {
+                            g.fillRect(x - 2, y - 2, 4, 4);
+                        }
+                        else if (marker_ == Markers::circle)
+                        {
+                            g.fillEllipse(x - 2, y - 2, 4, 4);
+                        }
+                    }
+                    else{ // firstFlag == true
+                        firstFlag = false;
+                    }
+                    
+                    preX = x;
+                    preY = y;
+                }
+                else{ // point is out of plotAria
+                    firstFlag = true;
+//                    g.drawLine(preX, preY, x, y, 2);
+                }
                 
                 point = point->nextListItem;
-                
             }
             dataset = dataset->nextListItem;
         }
     }
     
-    // draw x-axis
+    /* draw x-axis */
     g.setFont(Font(fontSize_));
-    g.setColour(fontColour_);
-    for (int i = 0; i < 5; i++)
+    float dashLength[]{ 4.0f, 2.0f };
+    
+    int y = plotAria_.getBottomLeft().getY();
+    int y0 = plotAria_.getTopLeft().getY();
+    for (int i = 0; i < xTickRes_; i++)
     {
-        int x = (scaleX * i * dx) + plotAria_.getBottomLeft().getX();
-        int y = plotAria_.getBottomLeft().getY();
-        int y0 = plotAria_.getTopLeft().getY();
-        float value = xMin_ + (dx * i);
-        Line<float> line(x, y, x, y0);
-        float len[] = { 4, 2 };
-        g.drawDashedLine(line, len, 2);
-        g.drawLine(x, y - 5, x, y + 5, 2);
-        g.drawSingleLineText(String(value), x, y + 20, Justification::horizontallyCentred);
+        g.setColour(gridColour_);
+        int x = tickX*dx*i + plotAria_.getBottomLeft().getX();
+        g.drawDashedLine(Line<float>(x, y, x, y0), dashLength,gridLineThick);
+        
+        g.setColour(fontColour_);
+        float axisValue = XRange_.getStart() + (dx * i);
+        g.drawSingleLineText(String(axisValue), x, y + 15, Justification::horizontallyCentred);
     }
 
-    // draw y-axis
-    for (int i = 0; i < 5; i++)
+    /* draw y-axis */
+    int x = plotAria_.getTopLeft().getX();
+    int x0 = plotAria_.getTopRight().getX();
+    for (int i = 0; i < yTickRes_; i++)
     {
-        int x = plotAria_.getTopLeft().getX();
+        g.setColour(gridColour_);
         int y = plotAria_.getHeight() - (scaleY * i * dy) + plotAria_.getTopLeft().getY();
-        int x0 = plotAria_.getTopRight().getX();
-        float value = yMin_ + (dy * i);
-        Line<float> line(x, y, x0, y);
-        float len[] = { 4, 2 };
-        g.drawDashedLine(line, len, 2);
-        g.drawLine(x - 5, y, x + 5, y, 2);
-        g.drawSingleLineText(String(value), x - 5, y, Justification::right);
+        g.drawDashedLine(Line<float>(x, y, x0, y), dashLength, gridLineThick);
+        
+        g.setColour(fontColour_);
+        float axisValue = YRange_.getStart() + (dy * i);
+        g.drawSingleLineText(String(axisValue), x - 5, y, Justification::right);
     }
 
+    /* draw x-axis label */
     g.drawText(xLabel_, graphAria_, Justification::centredBottom, true);
 
+    /* draw y-axis label (rotate 90 deg.)*/
     g.saveState();
     g.addTransform(AffineTransform::rotation(
         -MathConstants<float>::halfPi,
@@ -240,6 +253,7 @@ void Figure::resized()
 {
     
 }
+
 
 
 

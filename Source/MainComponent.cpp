@@ -55,7 +55,7 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
             if (data>1.0f) data = 1.0f;
             else if (data<-1.0f) data = -1.0f;
             
-            guimain.addGraph2Data(data);
+            guimain.addMicdata(data);
         }
     }
 

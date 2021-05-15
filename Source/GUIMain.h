@@ -48,8 +48,7 @@ public:
 
     //==============================================================================
     //[UserMethods]     -- You can add your own custom methods in this section.
-    void addGraph2Data(float sample);
-    void update();
+    void addMicdata(float sample);
     void timerCallback() override;
 
     void textEditorTextChanged (juce::TextEditor& textEditorThatWasReturnKeyPressed) override;
@@ -73,11 +72,16 @@ private:
     //[UserVariables]   -- You can add your own custom variables in this section.
     void drawWave();
 
-    int plotIdx_;
-    std::unique_ptr<dsp::FFT> forwardFFT;
-    float fifo [fftSize] = {};
-    float fftData [2 * fftSize];
-    int fifoIndex = 0;
+    int micDataIndex_;
+
+    std::unique_ptr<dsp::FFT> forwardFFT_;
+    float fifo_ [fftSize] = {};
+    float fftData_ [2 * fftSize];
+    int fifoIndex_ = 0;
+
+    bool plotDataReady_=false;
+
+    int Fs = 48000;
     //[/UserVariables]
 
     //==============================================================================
@@ -87,7 +91,6 @@ private:
     std::unique_ptr<juce::TextEditor> yMax_textEditor;
     std::unique_ptr<Figure> PropertySetting_figure;
     std::unique_ptr<juce::Slider> amplitude_slider;
-    std::unique_ptr<juce::Slider> freq_slider;
     std::unique_ptr<juce::ComboBox> WaveForm_comboBox;
     std::unique_ptr<juce::TextEditor> XLabel_textEditor;
     std::unique_ptr<juce::TextEditor> YLabel_textEditor;
@@ -97,10 +100,11 @@ private:
     std::unique_ptr<juce::TextEditor> Right_textEditor;
     std::unique_ptr<juce::TextButton> buckgroundColour_button;
     std::unique_ptr<juce::TextButton> plotAriaColour_button;
-    std::unique_ptr<juce::TextButton> GridColour_button;
+    std::unique_ptr<juce::TextButton> gridColour_button;
     std::unique_ptr<juce::TextButton> fontColour_button;
     std::unique_ptr<Figure> timeAxis_figure;
     std::unique_ptr<Figure> freqAxis_figure;
+    std::unique_ptr<juce::Slider> freq_slider;
 
 
     //==============================================================================

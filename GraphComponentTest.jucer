@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT id="S31Ow8" name="GraphComponentTest" projectType="guiapp" useAppConfig="0"
-              displaySplashScreen="1" jucerFormatVersion="1">
+              jucerFormatVersion="1" displaySplashScreen="1">
   <MAINGROUP id="g5UZB8" name="GraphComponentTest">
     <GROUP id="{938A15C0-F69D-5386-14AD-87298B5BF6D1}" name="Assets"/>
     <GROUP id="{595EF8FD-A0C2-B203-7549-9484D373B2AC}" name="Source">
