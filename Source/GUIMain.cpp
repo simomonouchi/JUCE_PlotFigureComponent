@@ -867,9 +867,8 @@ void GUIMain::drawWave()
     else if(currentItem == String("square"))
     {
         for (int i_sample = 0; i_sample<bufferSize; i_sample++){
-            float x = (2*M_PI-1)*(freq/Fs*i_sample);
-            if(0<x && x<M_PI) waveBuffer[i_sample] =amp;
-            else waveBuffer[i_sample] = -amp;
+            float x = fmod(2*M_PI*freq/Fs*i_sample, 2*M_PI);
+            waveBuffer[i_sample] = amp * (0<x && x<M_PI ? 1: -1);
         }
     }
 
