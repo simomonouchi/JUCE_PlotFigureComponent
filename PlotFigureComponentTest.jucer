@@ -5,6 +5,7 @@
   <MAINGROUP id="g5UZB8" name="GraphComponentTest">
     <GROUP id="{938A15C0-F69D-5386-14AD-87298B5BF6D1}" name="Assets"/>
     <GROUP id="{595EF8FD-A0C2-B203-7549-9484D373B2AC}" name="Source">
+      <FILE id="A7L98A" name="Selector.h" compile="0" resource="0" file="Source/Selector.h"/>
       <FILE id="I32agj" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
       <FILE id="sPTXjA" name="Figure.h" compile="0" resource="0" file="Source/Figure.h"/>
       <FILE id="bSzWXd" name="Figure.cpp" compile="1" resource="0" file="Source/Figure.cpp"/>

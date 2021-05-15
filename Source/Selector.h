@@ -1,6 +1,6 @@
 //
 //  Selector.h
-//  GraphComponentTest - App
+//  PlotFigureComponentTest - App
 //
 //  Created by Ryota Shimokawara on 2020/09/27.
 //

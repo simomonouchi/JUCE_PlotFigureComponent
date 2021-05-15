@@ -52,15 +52,14 @@ private:
 class Figure : public juce::Component
 {
 public:
-    Figure();
-    Figure(Rectangle<int> graphAria);
+    Figure() {}
     ~Figure() override;
 
 //==============================================================================
 
-    void paint(Graphics& g) override;
+    void paint (juce::Graphics& g)  override;
     void resized() override;
-    void setBounds(int x, int y, int width, int height);
+//    void setBounds (int x, int y, int w, int h);
     
     void addDataSet(float* y, int len);
     void addDataSet(float* x, float* y, int len);
@@ -70,18 +69,50 @@ public:
     void addPoint(float x, float y, int idx);
     void clear();
     
-    enum class Markers
+    void axesSetUp();
+    
+    enum class Marker
     {
         none,
         square,
         circle,
     };
     
+    enum class Scale
+    {
+        linear,
+        log,
+        // symlog // TBD
+        // logit  // TBD
+    };
+    
     using Padding = struct {
-        int left;
-        int top;
-        int right;
-        int bottom;
+        float left;
+        float top;
+        float right;
+        float bottom;
+    };
+    
+    template<typename T>
+    struct Limits
+    {
+        T min;
+        T max;
+        inline T getLength() const noexcept { return max - min; }
+    };
+    
+    /* for log scale */
+    static constexpr double LOG10_RATIO[10] ={
+        0.0,
+        0.301029995663981198017467022509663365781307220458984375,
+        0.17609125905568123737765517944353632628917694091796875,
+        0.124938736608299960639811843066127039492130279541015625,
+        0.0969100130080564614587501637288369238376617431640625,
+        0.07918124604762477591890501571469940245151519775390625,
+        0.06694678963061317933380678368848748505115509033203125,
+        0.05799194697768672579485382811981253325939178466796875,
+        0.05115252244738133224899456763523630797863006591796875,
+        0.04575749056067512920975559609360061585903167724609375,
     };
     
 //==============================================================================
@@ -111,11 +142,13 @@ public:
     inline void setMaxBufferingSize(int maxBufferingSize) noexcept {
         maxBufferingSize_ = maxBufferingSize;
     }
-    inline void setMarker(Markers marker) noexcept {marker_ = marker;}
+    inline void setMarker(Marker marker) noexcept {marker_ = marker;}
     inline void setPlotAriaColour(Colour newColour) noexcept {plotAriaColour_ = newColour;}
     inline void setBackGroungColour(Colour newColour) noexcept {plotAriaColour_ = newColour;}
     inline void setFontColour(Colour newColour) noexcept {fontColour_ = newColour;}
     inline void setGridColour(Colour newColour) noexcept {gridColour_ = newColour;}
+    inline void setXScale(Scale scale) noexcept{ xScale_ = scale; }
+    inline void setYScale(Scale scale) noexcept{ yScale_ = scale; }
     
     /* Getter */
     inline Padding getPadding() const noexcept { return padding_; }
@@ -130,9 +163,9 @@ private:
     
 /* Private Properties */
 private:
-    Rectangle<int> graphAria_;
     Rectangle<int> plotAria_;
     
+    bool PropertyChanged_ = true;
     String title_ = "";
     String xLabel_ = "";
     String yLabel_ = "";
@@ -149,11 +182,42 @@ private:
     bool autoSettingYAxisRange_ = true;
     int xTickRes_ = 5;
     int yTickRes_ = 5;
-    Markers marker_ = Markers::none;
-    int gridLineThick = 2;
+    Scale xScale_ = Scale::linear;
+    Scale yScale_ = Scale::linear;
+    Marker marker_ = Marker::none;
+    int gridLineThick_ = 2;
     
     LinkedListPointer<PlotDataset> plotData_;
+    
+    class AxesDrawer
+    {
+    public:
+        AxesDrawer(Figure& figure);
+        ~AxesDrawer() {}
+        
+        void drawAxes(Graphics& g);
+        
+    private:
+        Figure& figure_;
+        
+        float dashLength_[2]{ 4.0f, 2.0f };
+        
+        /* X axis */
+        int numXGridLine_;
+        float* xGridXPos_;
+        Limits<int>  xGridYPos_;
+        float* xAxisTickLabel_;
+        
+        /* Y axis */
+        int numYGridLine_;
+        Limits<int> yGridXPos_;
+        float* yGridYPos_;
+        float* yAxisTickLabel_;
+    };
+    
+    AxesDrawer* axisDrawer_;
     
      //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Figure)
 };
+

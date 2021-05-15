@@ -253,6 +253,7 @@ GUIMain::GUIMain ()
     bottom_textEditor->addListener(this);
     Left_textEditor->addListener(this);
     Right_textEditor->addListener(this);
+    
 
     forwardFFT_.reset (new dsp::FFT(fftOrder));
 
@@ -262,15 +263,19 @@ GUIMain::GUIMain ()
     WaveForm_comboBox->setText("sine");
     amplitude_slider->setValue(0.8);
     freq_slider->setValue(440);
+    PropertySetting_figure->axesSetUp();
     drawWave();
 
     timeAxis_figure->setPadding(Figure::Padding{40, 20, 20, 30});
     timeAxis_figure->setYRange(Range<float>(-0.5, 0.5));
     micDataIndex_ = timeAxis_figure->creatreDataSet();
-
+    timeAxis_figure->axesSetUp();
+    
     freqAxis_figure->setPadding(Figure::Padding{40, 20, 20, 30});
-    freqAxis_figure->setXRange(Range<float>(0, 24000));
+    freqAxis_figure->setXRange(Range<float>(0, 10000));
     freqAxis_figure->setYRange(Range<float>(-120, 0));
+    freqAxis_figure->setXScale(Figure::Scale::log);
+    freqAxis_figure->axesSetUp();
 
     //[/UserPreSize]
 
@@ -617,9 +622,9 @@ void GUIMain::paint (juce::Graphics& g)
     }
 
     //[UserPaint] Add your own custom painting code here..
-    PropertySetting_figure->paint(g);
-    timeAxis_figure->paint(g);
-    freqAxis_figure->paint(g);
+//    PropertySetting_figure->paint(g);
+//    timeAxis_figure->paint(g);
+//    freqAxis_figure->paint(g);
     //[/UserPaint]
 }
 
